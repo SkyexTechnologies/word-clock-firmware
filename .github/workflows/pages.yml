@@ -1,7 +1,7 @@
 # Publishes the documentation and the firmware of the latest release to
 # GitHub Pages. Clocks check firmware/word-clock.manifest.json there for
 # updates, so this runs when a release is published or a pre-release is marked
-# as a release, and when the documentation changes.
+# as a release (through redispatch below), and when the documentation changes.
 
 name: Publish docs and firmware
 
@@ -25,8 +25,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # A release event runs on its tag, and the github-pages environment only
+  # accepts deployments from main: start this workflow again on main.
+  # (workflow_dispatch is one of the events GITHUB_TOKEN may trigger.)
+  redispatch:
+    name: Run on main
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Start this workflow on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run pages.yml --ref main
+
   build:
     name: Build site
+    if: github.event_name != 'release'
     runs-on: ubuntu-latest
     steps:
       - name: Check out
