@@ -74,12 +74,19 @@ jobs:
           fileName: "*"
           out-file-path: _site/firmware
 
+      # Never replace the published firmware with an incomplete release.
       - name: Check the firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          if [ ! -f _site/firmware/word-clock.manifest.json ]; then
-            echo "::warning::No released firmware yet; clocks will report the update server as unreachable."
-          else
+          if [ -f _site/firmware/word-clock.manifest.json ]; then
             cat _site/firmware/word-clock.manifest.json
+          elif gh api "repos/$GH_REPO/releases/latest" > /dev/null 2>&1; then
+            echo "::error::The latest release has no word-clock.manifest.json; not publishing"
+            exit 1
+          else
+            echo "::warning::No released firmware yet; clocks will report the update server as unreachable."
           fi
 
       - name: Upload site

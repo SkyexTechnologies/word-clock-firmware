@@ -1,7 +1,8 @@
 # Builds the firmware for a release tag vX.Y.Z (pushed by the release workflow
 # of the private development repository) and attaches it to a pre-release.
-# Clocks don't see a pre-release; marking it as the latest release publishes
-# it (see pages.yml).
+# The pre-release is only created once the firmware is built, so it can't be
+# published without its files. Clocks don't see a pre-release; publishing it
+# as a release makes it available to them (see pages.yml).
 
 name: Build firmware
 
@@ -20,50 +21,81 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  create-release:
-    name: Create pre-release
-    if: startsWith(github.ref, 'refs/tags/v')
+  prepare:
+    name: Read release notes
     runs-on: ubuntu-latest
     outputs:
-      url: ${{ steps.release.outputs.url }}
-      notes: ${{ steps.release.outputs.notes }}
+      summary: ${{ steps.notes.outputs.summary }}
+      url: ${{ steps.notes.outputs.url }}
     steps:
       - name: Check out
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Create pre-release from the tag message
-        id: release
+      - name: Read the tag message
+        id: notes
+        if: startsWith(github.ref, 'refs/tags/v')
         env:
-          GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
           git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
-          gh release create "$TAG" --verify-tag --prerelease --notes-from-tag --title "$TAG"
-          echo "url=$(gh release view "$TAG" --json url --jq .url)" >> "$GITHUB_OUTPUT"
-          {
-            echo "notes<<EOF_NOTES"
-            git tag -l --format='%(contents:subject)' "$TAG"
-            echo "EOF_NOTES"
-          } >> "$GITHUB_OUTPUT"
+          echo "summary=$(git tag -l --format='%(contents:subject)' "$TAG")" >> "$GITHUB_OUTPUT"
+          echo "url=https://github.com/${{ github.repository }}/releases/tag/$TAG" >> "$GITHUB_OUTPUT"
 
   build:
     name: Build
-    needs: create-release
-    # Also runs for a manual test build, where create-release is skipped.
-    if: ${{ !failure() && !cancelled() }}
+    needs: prepare
     uses: esphome/workflows/.github/workflows/build.yml@2026.9.0
     with:
       files: word-clock.yaml
       esphome-version: latest
       release-version: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
-      release-summary: ${{ needs.create-release.outputs.notes }}
-      release-url: ${{ needs.create-release.outputs.url }}
+      release-summary: ${{ needs.prepare.outputs.summary }}
+      release-url: ${{ needs.prepare.outputs.url }}
+
+  # Draft first (visible only to maintainers), then the files, then a visible
+  # pre-release: a release can never be published without its firmware.
+  create-release:
+    name: Create draft release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Create draft from the tag message
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          gh release create "$TAG" --verify-tag --draft --prerelease --notes-from-tag --title "$TAG"
 
   upload:
     name: Upload to release
-    needs: [create-release, build]
+    needs: create-release
     if: startsWith(github.ref, 'refs/tags/v')
     uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2026.9.0
     with:
       version: ${{ github.ref_name }}
+      draft: true
+
+  publish-prerelease:
+    name: Publish pre-release
+    needs: upload
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Turn the draft into a pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          id=$(gh api "repos/$GH_REPO/releases" --paginate \
+            --jq '[.[] | select(.tag_name == $ENV.TAG and .draft)] | first | .id // empty')
+          if [ -z "$id" ]; then
+            echo "::error::No draft release for $TAG"
+            exit 1
+          fi
+          gh api --method PATCH "repos/$GH_REPO/releases/$id" -F draft=false -F prerelease=true > /dev/null
+          gh release view "$TAG" --json url,isPrerelease,assets --jq '{url, isPrerelease, files: (.assets | length)}'
