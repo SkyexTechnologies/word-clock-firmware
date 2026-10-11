@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.0.0"
+  project_version: "1.0.1"
   # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this URL built in: never rename that
@@ -15,6 +15,12 @@ esphome:
   # Release builds use the latest ESPHome; local builds use the pin in
   # requirements.txt. Keep this in sync with that pin.
   min_version: 2026.9.1
+  platformio_options:
+    build_flags:
+      # 48 KB IRAM with the unused part as a second heap (16 KB instead of
+      # 32 KB flash cache). The ESP8266 core puts the 16 KB TLS receive buffer
+      # there (see http_request:), so HTTPS updates don't exhaust the main heap.
+      - -DPIO_FRAMEWORK_ARDUINO_MMU_CACHE16_IRAM48_SECHEAP_SHARED
   project:
     name: "${project_name}"
     version: "${project_version}"
@@ -116,6 +122,10 @@ http_request:
   # ESPHome cannot verify HTTPS certificates on the ESP8266; downloads are
   # checked against the MD5 in the manifest instead.
   verify_ssl: false
+  # GitHub Pages ignores TLS max fragment length negotiation and sends records
+  # up to 16 KB; with ESPHome's 512-byte default the manifest read fails
+  # ("Stream pointer vanished"). Allocated only during a check or download.
+  tls_buffer_size_rx: 16384
 
 update:
   - platform: http_request
