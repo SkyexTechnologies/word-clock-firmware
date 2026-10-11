@@ -1,0 +1,658 @@
+substitutions:
+  name: "word-clock"
+  friendly_name: "Word Clock"
+  project_name: "Skyex Technologies.Word Clock"
+  project_version: "1.0.0"
+  # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
+  # its MD5), published with each release of SkyexTechnologies/
+  # word-clock-firmware. Every clock has this URL built in: never rename that
+  # account or repository, GitHub Pages doesn't redirect.
+  update_manifest_url: "https://skyextechnologies.github.io/word-clock-firmware/firmware/word-clock.manifest.json"
+
+esphome:
+  name: "${name}"
+  name_add_mac_suffix: true
+  # Release builds use the latest ESPHome; local builds use the pin in
+  # requirements.txt. Keep this in sync with that pin.
+  min_version: 2026.9.1
+  project:
+    name: "${project_name}"
+    version: "${project_version}"
+  on_boot:
+    # After the layout component (setup priority 600) has loaded the factory
+    # data, before Wi-Fi (250): hide the switches of indications this clock
+    # doesn't have. ESPHome only allows this once per boot, before Home
+    # Assistant and the web page list the entities.
+    - priority: 500
+      then:
+        - lambda: |-
+            using namespace esphome::wordclock_layout;
+            id(indication_it_is)->set_internal(!id(layout).has_feature(FEATURE_IT_IS));
+            id(indication_minutes)->set_internal(!id(layout).has_feature(FEATURE_MINUTES));
+            id(indication_week_days)->set_internal(!id(layout).has_feature(FEATURE_WEEKDAYS));
+    - priority: -10
+      then:
+        # Turn on with the Clock effect in one call: the effect is dropped while
+        # the light restores switched off, and turning on without it first shows
+        # all LEDs in the light's colour. With the effect active, the default
+        # transition only fades the brightness of what the effect draws.
+        - light.turn_on:
+            id: word_clock
+            effect: Clock
+        # Without a layout this sets full brightness for the colour test.
+        - script.execute:
+            id: set_light_brightness
+            quick_transition: true
+        - script.execute:
+            id: apply_timezone
+            timezone_index: !lambda return id(timezone).active_index().value_or(0);
+
+external_components:
+  # Next to this file, here and in the published release repository.
+  - source:
+      type: local
+      path: components
+    components: [wordclock_layout]
+
+wordclock_layout:
+  id: layout
+
+esp8266:
+  # ESP-12S modules have 4 MB of flash. The linker script supplied by
+  # components/wordclock_layout replaces the 4 MB flash map: layout sector 1018
+  # and ESPHome preferences sector 1019, with about 3 MB for OTA staging.
+  board: esp12e
+  restore_from_flash: true
+
+logger:
+  logs:
+    # Both log the Wi-Fi password in plain text when it is set (captive portal
+    # at INFO, Improv serial at DEBUG); keep those lines out of the logs.
+    captive_portal: WARN
+    improv_serial: INFO
+
+api:
+  # Every clock ships without a key. Home Assistant sets a per-clock key when
+  # it adopts the clock; from then on only encrypted connections work, and
+  # the key also protects OTA updates (see ota:). Without Home Assistant the
+  # clock stays keyless. Only a factory reset (hold the button 10-20 s)
+  # removes the key.
+  encryption: {}
+  services:
+    - service: set_word_layout
+      variables:
+        flat_layout: int[]
+        hardware_revision: int
+        has_it_is: bool
+        has_minutes: bool
+        has_weekdays: bool
+      then:
+        - lambda: |-
+            if (!id(layout).write_layout(flat_layout, hardware_revision, has_it_is, has_minutes,
+                                         has_weekdays)) {
+              ESP_LOGE("word_clock", "Failed to save word layout to EEPROM");
+            }
+
+ota:
+  # Native OTA (ESPHome Builder, `esphome run`), without a password (decided
+  # 2026-10-09). Once Home Assistant has set the clock's API key, encryption
+  # is offered, but ESPHome cannot require it for a key set at runtime, so
+  # unencrypted uploads stay possible on the local network.
+  - platform: esphome
+  # Lets the clock download and install firmware itself (see update:).
+  - platform: http_request
+
+# A key can only be set within 15 minutes after power-on, so nobody on the
+# network can claim a clock later. When the window closes, the setup hotspot
+# also shuts down: unplug and replug the clock to set it up again.
+provisioning:
+  timeout: 15min
+  on_timeout:
+    - logger.log:
+        level: WARN
+        format: "Setup window closed; restart the clock to set it up again"
+
+http_request:
+  # ESPHome cannot verify HTTPS certificates on the ESP8266; downloads are
+  # checked against the MD5 in the manifest instead.
+  verify_ssl: false
+
+update:
+  - platform: http_request
+    id: firmware_update
+    name: "Firmware"
+    source: ${update_manifest_url}
+    # Checks every 6 hours (default); installing is always a user action.
+
+wifi:
+  fast_connect: False
+  ap: {}
+
+captive_portal:
+
+improv_serial:
+
+web_server:
+  port: 80
+  local: True
+  # Version 3 has a colour picker for the light, so the colour can be set
+  # without Home Assistant.
+  version: 3
+  # No firmware upload through the web page: anyone on the network could
+  # install their own firmware. Updates come from update: (buttons below).
+  ota: false
+
+time:
+  # Home Assistant supplies both current time and its configured timezone over
+  # the native API. With no explicit timezone here, HA's timezone is applied
+  # dynamically when this source syncs. Until then, apply_timezone sets
+  # Amsterdam (option 0 of 06. Time Zone).
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time_sync:
+      then:
+        # A manually selected zone takes precedence over HA's automatic zone.
+        # Delay until the API handler has applied the timezone from HA.
+        - if:
+            condition:
+              lambda: return id(timezone).active_index().value_or(0) > 0;
+            then:
+              - delay: 1s
+              - script.execute:
+                  id: apply_timezone
+                  timezone_index: !lambda return id(timezone).active_index().value_or(0);
+  - platform: sntp
+    id: sntp_time
+
+button:
+  # The web page has no install button for update entities, so these two
+  # buttons and the "Firmware Update" text sensor expose the update there.
+  - platform: template
+    name: "Check for Firmware Update"
+    icon: "mdi:refresh"
+    entity_category: config
+    on_press:
+      - update.check: firmware_update
+  - platform: template
+    name: "Install Firmware Update"
+    icon: "mdi:download"
+    entity_category: config
+    on_press:
+      - if:
+          condition:
+            lambda: return id(firmware_update)->state == update::UPDATE_STATE_AVAILABLE;
+          then:
+            - update.perform: firmware_update
+          else:
+            - logger.log:
+                level: WARN
+                format: "No firmware update available to install"
+  # Internal: a factory reset needs physical access (hold the button
+  # 10-20 s), so nobody on the network can wipe the clock.
+  - platform: factory_reset
+    id: factory_reset_button
+    name: Factory Reset Word Clock
+    internal: true
+  - platform: restart
+    id: restart_button
+    name: Restart Word Clock
+
+binary_sensor:
+  - platform: gpio
+    id: reset_button
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: True
+    internal: true
+    on_click:
+      - min_length: 2s
+        max_length: 5s
+        then:
+          - button.press: restart_button
+      - min_length: 10s
+        max_length: 20s
+        then:
+          - button.press: factory_reset_button
+  # Off means the word layout in flash sector 1018 is missing or corrupt, so
+  # the clock runs its LED self-test until it is provisioned (see README).
+  - platform: template
+    id: layout_provisioned
+    name: "Layout Provisioned"
+    entity_category: diagnostic
+    icon: "mdi:grid"
+    lambda: return id(layout).is_provisioned();
+
+select:
+  - platform: template
+    name: "06. Time Zone"
+    id: timezone
+    restore_value: True
+    optimistic: True
+    icon: "mdi:map-clock"
+    # The selection is saved and applied by option index (see the switch in
+    # the apply_timezone script). Only append new zones at the end, and update
+    # apply_timezone to match; never insert, remove or reorder options, or
+    # a clock's saved time zone changes after an update.
+    options:
+      - "Home Assistant (otherwise Amsterdam)"
+      - "UTC (UTC+00:00)"
+      - "Amsterdam (UTC+01:00 / UTC+02:00 DST)"
+      - "London (UTC+00:00 / UTC+01:00 DST)"
+      - "New York (UTC-05:00 / UTC-04:00 DST)"
+      - "Chicago (UTC-06:00 / UTC-05:00 DST)"
+      - "Denver (UTC-07:00 / UTC-06:00 DST)"
+      - "Los Angeles (UTC-08:00 / UTC-07:00 DST)"
+      - "Seoul, South Korea (UTC+09:00)"
+      - "Sydney (UTC+10:00 / UTC+11:00 DST)"
+    initial_option: "Home Assistant (otherwise Amsterdam)"
+    on_value:
+      then:
+        - script.execute:
+            id: apply_timezone
+            timezone_index: !lambda return id(timezone).active_index().value_or(0);
+
+switch:
+  - platform: template
+    name: "03. Automatic Brightness"
+    id: automatic_brightness
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:brightness-auto"
+  - platform: template
+    name: "Indication: It is"
+    id: indication_it_is
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:file-word-box-outline"
+  - platform: template
+    name: "Indication: Minutes"
+    id: indication_minutes
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:file-word-box-outline"
+  - platform: template
+    name: "Indication: Week Days"
+    id: indication_week_days
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:file-word-box-outline"
+
+script:
+  - id: apply_timezone
+    parameters:
+      timezone_index: int
+    then:
+      - lambda: |-
+          // Upper bound = last option index; raise it when appending a zone.
+          if (timezone_index < 0 || timezone_index > 9) return;
+
+          esphome::time::ParsedTimezone tz{};
+          auto set_dst_rule = [](esphome::time::DSTRule &rule, uint8_t month,
+                                 uint8_t week, int32_t time_seconds) {
+            rule.type = esphome::time::DSTRuleType::MONTH_WEEK_DAY;
+            rule.month = month;
+            rule.week = week;
+            rule.day_of_week = 0;  // Sunday
+            rule.time_seconds = time_seconds;
+          };
+
+          switch (timezone_index) {
+            case 1:  // UTC
+              break;
+            // Option 0 follows Home Assistant. Until Home Assistant sends its
+            // zone, and on clocks without it, use Amsterdam, not the zone of
+            // the build machine (UTC for release builds).
+            case 0:
+            case 2:  // Europe/Amsterdam
+              tz.std_offset_seconds = -3600;
+              tz.dst_offset_seconds = -7200;
+              set_dst_rule(tz.dst_start, 3, 5, 7200);
+              set_dst_rule(tz.dst_end, 10, 5, 10800);
+              break;
+            case 3:  // Europe/London
+              tz.dst_offset_seconds = -3600;
+              set_dst_rule(tz.dst_start, 3, 5, 3600);
+              set_dst_rule(tz.dst_end, 10, 5, 7200);
+              break;
+            case 4:  // America/New_York
+              tz.std_offset_seconds = 18000;
+              tz.dst_offset_seconds = 14400;
+              set_dst_rule(tz.dst_start, 3, 2, 7200);
+              set_dst_rule(tz.dst_end, 11, 1, 7200);
+              break;
+            case 5:  // America/Chicago
+              tz.std_offset_seconds = 21600;
+              tz.dst_offset_seconds = 18000;
+              set_dst_rule(tz.dst_start, 3, 2, 7200);
+              set_dst_rule(tz.dst_end, 11, 1, 7200);
+              break;
+            case 6:  // America/Denver
+              tz.std_offset_seconds = 25200;
+              tz.dst_offset_seconds = 21600;
+              set_dst_rule(tz.dst_start, 3, 2, 7200);
+              set_dst_rule(tz.dst_end, 11, 1, 7200);
+              break;
+            case 7:  // America/Los_Angeles
+              tz.std_offset_seconds = 28800;
+              tz.dst_offset_seconds = 25200;
+              set_dst_rule(tz.dst_start, 3, 2, 7200);
+              set_dst_rule(tz.dst_end, 11, 1, 7200);
+              break;
+            case 8:  // Asia/Seoul
+              tz.std_offset_seconds = -32400;
+              break;
+            case 9:  // Australia/Sydney
+              tz.std_offset_seconds = -36000;
+              tz.dst_offset_seconds = -39600;
+              set_dst_rule(tz.dst_start, 10, 1, 7200);
+              set_dst_rule(tz.dst_end, 4, 1, 10800);
+              break;
+          }
+
+          esphome::time::set_global_tz(tz);
+
+          if (timezone_index == 0) {
+            // When Home Assistant is connected, ask it for the time now: its
+            // reply also sets its zone, instead of keeping Amsterdam until
+            // the next periodic sync. Does nothing without Home Assistant.
+            id(homeassistant_time).update();
+          }
+
+  - id: set_light_brightness
+    parameters:
+      quick_transition: bool
+    then:
+      - if:
+          condition:
+            light.is_on: word_clock
+          then:
+            - lambda: |-
+                float brightness;
+                if (!id(layout).is_provisioned()) {
+                  // No layout: the colour test runs at full brightness, whatever
+                  // the sensor or the 03. Automatic Brightness switch says.
+                  brightness = 1.0f;
+                } else if (!id(automatic_brightness).state ||
+                           std::isnan(id(light_sensor).state)) {
+                  // Manual brightness, or no sensor reading yet (up to 15 s
+                  // after boot, while the brightness numbers already call this
+                  // script when they restore): leave the brightness alone.
+                  return;
+                } else {
+                  float min_brightness = id(minimum_brightness).state;
+                  float max_brightness = id(maximum_brightness).state;
+                  brightness = (max_brightness - min_brightness) * id(light_sensor).state + min_brightness;
+                }
+                // Not saved: the sensor adjusts brightness every 15 s, and
+                // saving each change would wear out the settings flash sector.
+                // Only changes made by the user are restored after a reboot.
+                id(word_clock).make_call()
+                    .set_brightness(clamp(brightness, 0.0f, 1.0f))
+                    .set_transition_length(quick_transition ? 500 : 10000)
+                    .set_save(false)
+                    .perform();
+
+number:
+  - platform: template
+    name: "02. Transition"
+    id: transition
+    optimistic: True
+    min_value: 0
+    max_value: 10
+    step: 1
+    restore_value: True
+    icon: "mdi:transition"
+  - platform: template
+    name: "04. Minimum Brightness"
+    id: minimum_brightness
+    optimistic: True
+    min_value: 0.01
+    max_value: 1
+    step: 0.01
+    restore_value: True
+    icon: "mdi:brightness-4"
+    on_value:
+      - if: 
+          condition:
+            - lambda: "return id(maximum_brightness).state < x;"
+          then:
+            - number.set:
+               id: maximum_brightness
+               value: !lambda "return x;"
+      - script.execute: 
+          id: set_light_brightness
+          quick_transition: True
+  - platform: template
+    name: "05. Maximum Brightness"
+    id: maximum_brightness
+    optimistic: True
+    min_value: 0.01
+    max_value: 1
+    initial_value: 1
+    step: 0.01
+    restore_value: True  
+    icon: "mdi:brightness-5"
+    on_value:
+      - if: 
+          condition:
+            - lambda: "return x < id(minimum_brightness).state;"
+          then:
+            - number.set:
+               id: minimum_brightness
+               value: !lambda "return x;"
+      - script.execute: 
+          id: set_light_brightness
+          quick_transition: True
+text_sensor:
+  # Factory data from the layout sector: hardware revision and fitted
+  # indications. Written with the layout (scripts/provision_layout*.py).
+  - platform: template
+    name: "Hardware"
+    icon: "mdi:chip"
+    entity_category: diagnostic
+    update_interval: 60s
+    lambda: |-
+      using namespace esphome::wordclock_layout;
+      if (!id(layout).is_provisioned())
+        return std::string("Not provisioned");
+      std::string fitted;
+      if (id(layout).has_feature(FEATURE_IT_IS)) fitted += "it is, ";
+      if (id(layout).has_feature(FEATURE_MINUTES)) fitted += "minutes, ";
+      if (id(layout).has_feature(FEATURE_WEEKDAYS)) fitted += "weekdays, ";
+      fitted = fitted.empty() ? std::string("none") : fitted.substr(0, fitted.size() - 2);
+      return "Revision " + std::to_string(id(layout).hardware_revision()) + " (indications: " + fitted + ")";
+  - platform: template
+    name: "Firmware Update"
+    icon: "mdi:update"
+    entity_category: diagnostic
+    update_interval: 30s
+    lambda: |-
+      auto *fw = id(firmware_update);
+      switch (fw->state) {
+        case update::UPDATE_STATE_AVAILABLE:
+          return std::string("${project_version} -> ") + fw->update_info.latest_version + " available";
+        case update::UPDATE_STATE_INSTALLING:
+          return std::string("Installing...");
+        case update::UPDATE_STATE_NO_UPDATE:
+          return std::string("${project_version} (up to date)");
+        default:
+          return std::string("${project_version} (update server not reachable)");
+      }
+
+sensor:
+  - platform: adc
+    pin: A0
+    name: "Light Sensor"
+    id: light_sensor
+    update_interval: 15s
+    internal: True
+    on_value:
+      - script.execute: 
+          id: set_light_brightness
+          quick_transition: False
+
+light:
+  - platform: neopixelbus
+    type: GRB
+    variant: WS2812X
+    pin: GPIO2
+    num_leds: 121
+    name: "01. Word Clock"
+    id: word_clock
+    default_transition_length: 10s
+    icon: "mdi:file-word-box-outline"
+    # The light saves its own colour, brightness and effect; automatic
+    # brightness is not saved (see set_light_brightness). RESTORE_AND_OFF keeps
+    # it off during setup: the light is set up before the layout component and
+    # Wi-Fi, and is switched on in on_boot instead.
+    restore_mode: RESTORE_AND_OFF
+    on_state:
+      then:
+        - if:
+            # Use the requested state (remote_values): when the light is
+            # switched on from the web page or Home Assistant, it is still
+            # fading in, and light.is_on (current_values) reads off, so the
+            # effect was never set and all LEDs lit up.
+            condition:
+              lambda: |-
+                return id(word_clock).remote_values.is_on() &&
+                       id(word_clock).get_effect_name() == "None";
+            then:
+              - delay: 10ms
+              # Enforce the light effect to be at "Clock"
+              - light.control:
+                  id: word_clock
+                  effect: Clock
+        # Switch off at once instead of fading out over the default 10 s
+        # transition (switching on keeps it). on_turn_off only fires after
+        # the fade has finished, so react to the requested state here.
+        - if:
+            condition:
+              lambda: |-
+                return !id(word_clock).remote_values.is_on() &&
+                       id(word_clock).current_values.is_on();
+            then:
+              - delay: 10ms
+              - light.turn_off:
+                  id: word_clock
+                  transition_length: 0s
+    effects:
+      - addressable_lambda:
+          name: "Clock"
+          update_interval: 20ms
+          lambda: |-
+            static int minutes;
+            static int hours;
+            static int CurrentTime[5];
+            static int PreviousTime[5];
+            static int fade;
+            static int fadeTransition;
+            
+            static Color letters[121];
+
+            if (initial_run) {
+              it.all() = Color::BLACK;
+              std::fill_n(letters, it.size(), Color::BLACK);
+              fade = int(25*id(transition).state);
+              fadeTransition = int(25*id(transition).state);
+            }
+
+            /*
+             * Setup states, shown instead of the time:
+             * - No valid word layout: all LEDs cycle red, green, blue (1 s each)
+             *   at full brightness (set_light_brightness forces 100%), so every
+             *   LED and colour channel can be checked before provisioning. White
+             *   is skipped: all LEDs at full white draw about 7 A.
+             * - No time yet since power-on (no Wi-Fi, Home Assistant or NTP):
+             *   one LED at a time steps through all LEDs (100 ms each) in the
+             *   light's colour. Its index is logged at VERBOSE level, which helps
+             *   when mapping a new letter grid. Once the time is known, a later
+             *   Wi-Fi drop doesn't bring this back: the clock keeps its time.
+             */
+            if (!id(layout).is_provisioned()) {
+              static const uint32_t COLOUR_MS = 1000;
+              const Color colours[3] = {Color(255, 0, 0), Color(0, 255, 0), Color(0, 0, 255)};
+              it.all() = colours[(millis() / COLOUR_MS) % 3];
+              return;
+            }
+
+            auto time = id(sntp_time).now();
+            if (!time.is_valid()) {
+              static const uint32_t CHASE_MS = 100;
+              static int last_led = -1;
+              const int led = (millis() / CHASE_MS) % it.size();
+              it.all() = Color::BLACK;
+              it[led] = current_color;
+              if (led != last_led) {
+                ESP_LOGV("led_test", "LED %d", led);
+                last_led = led;
+              }
+              return;
+            }
+
+            /*
+             * Below is the transition control of the clock to change to the next time (next 5 minute section).
+             * The update_interval is 20ms, which would mean that it takes 50 iterations in total to fade to the next time over a 1 second period.
+             * This fade is divided into fading-out the old time (25 steps) and fading-in the new time (25 steps).
+             * The 02. Transition setting specifies the number of seconds the total fade takes (id: transition).
+             * The value of the transition is multiplied by 25 (steps) to create the fader.
+             */
+            auto trans = int(25*id(transition).state);
+            if (trans != fadeTransition) {
+              fade = trans;
+              fadeTransition = trans;
+            }
+
+            int total_minutes = time.hour * 60 + time.minute;
+            minutes = (int)(total_minutes / 5) * 5 % 60; // minutes per 5
+            hours = total_minutes / 60;
+
+            if (minutes >= 20) hours += 1;
+
+            CurrentTime[0] = 0;
+            CurrentTime[1] = minutes / 5 + 1;
+            CurrentTime[2] = (hours % 12) + 13;
+            CurrentTime[3] = time.day_of_week + 24;
+            CurrentTime[4] = (total_minutes % 5) + 32;
+
+            if (PreviousTime[1] == CurrentTime[1]) {
+              std::fill_n(letters, it.size(), Color::BLACK);
+              for (int i = 0; i < 5; i++) { 
+                // Skip indications that are switched off or not fitted on this clock.
+                if (i == 0 && (!id(indication_it_is).state ||
+                               !id(layout).has_feature(wordclock_layout::FEATURE_IT_IS))) continue;
+                if (i == 3 && (!id(indication_week_days).state ||
+                               !id(layout).has_feature(wordclock_layout::FEATURE_WEEKDAYS))) continue;
+                if (i == 4 && (!id(indication_minutes).state ||
+                               !id(layout).has_feature(wordclock_layout::FEATURE_MINUTES))) continue;
+                for (int j = 0; j < 12; j++) {
+                  int8_t led = id(layout).led_for(CurrentTime[i], j);
+                  if (led >= 0) letters[led] = current_color;
+                }
+              }
+            }
+
+            if (!initial_run) {
+              // Fade words from selected brightness down to zero, when time changes.
+              if (PreviousTime[1] != CurrentTime[1] && fade > 0) {
+                for (int i = 0; i < it.size(); i++) it[i] = Color(int(letters[i].r*fade/fadeTransition), int(letters[i].g*fade/fadeTransition), int(letters[i].b*fade/fadeTransition));
+                fade--;
+                return;
+              }
+
+              // Set previous time to current time, such that above code will not run again. 
+              for (int i = 0; i < 5; i++) PreviousTime[i] = CurrentTime[i];
+              
+              // Now that new pixels for current time are known, slowly fade in the words.
+              if (fade < fadeTransition) {
+                for (int i = 0; i < it.size(); i++) it[i] = Color(int(letters[i].r*fade/fadeTransition), int(letters[i].g*fade/fadeTransition), int(letters[i].b*fade/fadeTransition));
+                fade++;
+                return;
+              }
+            }
+              
+            for (int i = 0; i < it.size(); i++) it[i] = letters[i];
+
+            // Set previous time to current time, such that above code will not run again. 
+            for (int i = 0; i < 5; i++) PreviousTime[i] = CurrentTime[i];
