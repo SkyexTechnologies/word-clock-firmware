@@ -35,9 +35,9 @@ the clock is plugged in. Unplug the clock and plug it in again.
 ## The time is off by one or more hours
 
 Check **06. Time Zone** under [Settings](settings.html). Without Home
-Assistant, choose your region there. With Home Assistant and *Home Assistant /
-build default*, check the time zone in Home Assistant under **Settings →
-System → General**.
+Assistant the clock uses Amsterdam time; choose your region there if you live
+elsewhere. With Home Assistant and *Home Assistant (otherwise Amsterdam)*,
+check the time zone in Home Assistant under **Settings → System → General**.
 
 ## The clock lost the time after a power cut
 

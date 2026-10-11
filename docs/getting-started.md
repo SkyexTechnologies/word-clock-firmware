@@ -33,7 +33,8 @@ Every clock has its own web page for all its settings, no app needed. Find
 the clock's IP address in your router's list of devices, and open
 `http://<ip-address>` in a browser on the same network.
 
-Not using Home Assistant? Choose your region under **06. Time Zone**. See
+The clock uses Amsterdam time unless Home Assistant sets another time zone.
+Live elsewhere? Choose your region under **06. Time Zone**. See
 [Settings](settings.html) for what each setting does.
 
 ## 4. Optional: Home Assistant
