@@ -1,0 +1,111 @@
+// Calmer, more spacious layout in the style of Outline-based documentation.
+
+body {
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+.main-content {
+  line-height: 1.7;
+
+  h1:first-of-type {
+    font-size: 2.25rem !important;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    margin-top: 2.5rem;
+  }
+
+  h3 {
+    font-size: 1.2rem !important;
+    font-weight: 600;
+    margin-top: 2rem;
+  }
+
+  // The theme shows h4 small and uppercase; keep it a normal heading.
+  h4 {
+    font-size: 1rem !important;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  p, li {
+    font-size: 1rem;
+  }
+
+  img {
+    border-radius: 8px;
+    border: 1px solid $border-color;
+  }
+
+  table {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  :not(pre) > code {
+    border-radius: 4px;
+    padding: 0.1em 0.35em;
+  }
+}
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+// Sidebar links as rounded rows, like Outline.
+.nav-list .nav-list-item .nav-list-link {
+  border-radius: 6px;
+  margin: 1px 0.5rem;
+  padding-left: 0.75rem;
+
+  &:hover,
+  &.active {
+    background-image: none;
+    background-color: $feedback-color;
+  }
+
+  &.active {
+    font-weight: 600;
+  }
+}
+
+.side-bar {
+  border-right: 1px solid $border-color;
+}
+
+.main-header {
+  border-bottom: 1px solid $border-color;
+}
+
+.search-input {
+  border-radius: 8px;
+}
+
+.btn {
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+pre.highlight,
+div.highlighter-rouge,
+figure.highlight {
+  border-radius: 8px;
+}
+
+// Firmware install button on the updating page.
+.install-box {
+  border: 1px solid $border-color;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  background-color: $sidebar-color;
+}

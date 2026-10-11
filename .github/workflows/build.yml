@@ -1,0 +1,69 @@
+# Builds the firmware for a release tag vX.Y.Z (pushed by the release workflow
+# of the private development repository) and attaches it to a pre-release.
+# Clocks don't see a pre-release; marking it as the latest release publishes
+# it (see pages.yml).
+
+name: Build firmware
+
+on:
+  push:
+    tags:
+      - "v*"
+  # Test build without a release.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    name: Create pre-release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    outputs:
+      url: ${{ steps.release.outputs.url }}
+      notes: ${{ steps.release.outputs.notes }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create pre-release from the tag message
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          git fetch --force origin "refs/tags/$TAG:refs/tags/$TAG"
+          gh release create "$TAG" --verify-tag --prerelease --notes-from-tag --title "$TAG"
+          echo "url=$(gh release view "$TAG" --json url --jq .url)" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<EOF_NOTES"
+            git tag -l --format='%(contents:subject)' "$TAG"
+            echo "EOF_NOTES"
+          } >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Build
+    needs: create-release
+    # Also runs for a manual test build, where create-release is skipped.
+    if: ${{ !failure() && !cancelled() }}
+    uses: esphome/workflows/.github/workflows/build.yml@2026.9.0
+    with:
+      files: word-clock.yaml
+      esphome-version: latest
+      release-version: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+      release-summary: ${{ needs.create-release.outputs.notes }}
+      release-url: ${{ needs.create-release.outputs.url }}
+
+  upload:
+    name: Upload to release
+    needs: [create-release, build]
+    if: startsWith(github.ref, 'refs/tags/v')
+    uses: esphome/workflows/.github/workflows/upload-to-gh-release.yml@2026.9.0
+    with:
+      version: ${{ github.ref_name }}

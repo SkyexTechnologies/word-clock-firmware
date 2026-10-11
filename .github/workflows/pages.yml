@@ -1,0 +1,86 @@
+# Publishes the documentation and the firmware of the latest release to
+# GitHub Pages. Clocks check firmware/word-clock.manifest.json there for
+# updates, so this runs when a release is published or a pre-release is marked
+# as a release, and when the documentation changes.
+
+name: Publish docs and firmware
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "Gemfile"
+      - ".github/workflows/pages.yml"
+  release:
+    types: [released]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Set up Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build the documentation
+        run: bundle exec jekyll build --source docs --destination _site --baseurl "${{ steps.pages.outputs.base_path }}"
+        env:
+          JEKYLL_ENV: production
+
+      # Pre-releases are skipped: "latest" is the newest full release.
+      - name: Download the latest release
+        id: firmware
+        uses: robinraju/release-downloader@v1
+        continue-on-error: true
+        with:
+          latest: true
+          fileName: "*"
+          out-file-path: _site/firmware
+
+      - name: Check the firmware
+        run: |
+          if [ ! -f _site/firmware/word-clock.manifest.json ]; then
+            echo "::warning::No released firmware yet; clocks will report the update server as unreachable."
+          else
+            cat _site/firmware/word-clock.manifest.json
+          fi
+
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
