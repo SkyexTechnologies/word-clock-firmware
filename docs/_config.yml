@@ -42,6 +42,11 @@ callouts:
     title: Important
     color: red
 
+# The theme's SCSS uses Sass features that are deprecated; hide those warnings.
+sass:
+  quiet_deps: true
+  silence_deprecations: [import, global-builtin, color-functions]
+
 # The firmware/ folder is added by the Pages workflow from the latest release.
 exclude:
   - Gemfile

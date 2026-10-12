@@ -1,0 +1,5 @@
+source "https://rubygems.org"
+
+# Same versions as the published site (built from docs/ in word-clock-firmware).
+gem "jekyll", "~> 4.4"
+gem "just-the-docs", "~> 0.12.0"
