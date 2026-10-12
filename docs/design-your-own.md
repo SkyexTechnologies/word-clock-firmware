@@ -19,7 +19,9 @@ words, or with a name or message hidden among the letters.
 4. **Save & send:** download your design and email the file to
    Skyex Technologies with your order.
 
-Your design is kept in this browser while you work on it. Download it to keep
+To start from one of the example grids (English, Nederlands or 한국어), go to
+**Save & send** and choose it under *Start from an example*. Your design is
+kept in this browser while you work on it. Download it to keep
 a copy or to continue on another device.
 
 ### Which hour does a phrase name?
@@ -111,10 +113,12 @@ each minute phrase yourself.
         </div>
         <p class="wcd-muted">"Email your design" downloads the file and opens an
         email; attach the downloaded file before you send it.</p>
-        <span class="wcd-label">Start again</span>
+        <span class="wcd-label">Start from an example</span>
         <div class="wcd-buttons">
-          <button type="button" class="btn" id="wcd-start-dutch">From the Dutch grid</button>
-          <button type="button" class="btn" id="wcd-start-empty">With an empty grid</button>
+          <button type="button" class="btn" data-example="english">English</button>
+          <button type="button" class="btn" data-example="dutch">Nederlands</button>
+          <button type="button" class="btn" data-example="korean" lang="ko">한국어</button>
+          <button type="button" class="btn" id="wcd-start-empty">Empty grid</button>
         </div>
       </div>
 

@@ -24,9 +24,14 @@
   var DOT = '.';
   var APOSTROPHES = ["'", '\u2019'];
 
-  var DUTCH_LETTERS = ["HETEISUVIJF", "TIENAGNVOOR", "OVERBUKWART", "HALFYIUOVER", "VOORLDIÉÉND", "TWEELOKDRIE", "VIERVIJFZES", "ZEVENCNEGEN", "ACHTTIENELF", "TWAALFPMUUR", "MDWDVZZ...."];
-  var DUTCH_ROWS = [[0, 1, 2, 4, 5], [99, 100, 101], [7, 8, 9, 10, 22, 23, 24, 25], [18, 19, 20, 21, 22, 23, 24, 25], [28, 29, 30, 31, 32, 33, 34, 35, 36], [11, 12, 13, 14, 18, 19, 20, 21, 40, 41, 42, 43], [7, 8, 9, 10, 11, 12, 13, 14, 40, 41, 42, 43], [40, 41, 42, 43], [7, 8, 9, 10, 22, 23, 24, 25, 40, 41, 42, 43], [18, 19, 20, 21, 22, 23, 24, 25, 40, 41, 42, 43], [28, 29, 30, 31, 32, 44, 45, 46, 47], [11, 12, 13, 14, 18, 19, 20, 21], [7, 8, 9, 10, 11, 12, 13, 14], [104, 105, 106, 107, 108, 109], [51, 52, 53], [62, 63, 64, 65], [55, 56, 57, 58], [66, 67, 68, 69], [70, 71, 72, 73], [74, 75, 76], [83, 84, 85, 86, 87], [88, 89, 90, 91], [77, 78, 79, 80, 81], [92, 93, 94, 95], [96, 97, 98], [116], [110], [111], [112], [113], [114], [115], [], [117], [117, 118], [117, 118, 119], [117, 118, 119, 120], [], [], [], [], [], [], [], [], [], [], [], []];
-  var DUTCH_NEXT_HOUR = [false, false, false, false, true, true, true, true, true, true, true, true];
+  // Example grids, copied from provisioning/default-layout.json (plus the Dutch
+  // letters), english-layout.json and korean-layout.json in the development
+  // repository. Keep them in sync when those files change.
+  var EXAMPLES = {
+    dutch: {"name":"Nederlands","next_hour":[false,false,false,false,true,true,true,true,true,true,true,true],"letters":["HETEISUVIJF","TIENAGNVOOR","OVERBUKWART","HALFYIUOVER","VOORLDIÉÉND","TWEELOKDRIE","VIERVIJFZES","ZEVENCNEGEN","ACHTTIENELF","TWAALFPMUUR","MDWDVZZ...."],"words":[[0,1,2,4,5],[99,100,101],[7,8,9,10,22,23,24,25],[18,19,20,21,22,23,24,25],[28,29,30,31,32,33,34,35,36],[11,12,13,14,18,19,20,21,40,41,42,43],[7,8,9,10,11,12,13,14,40,41,42,43],[40,41,42,43],[7,8,9,10,22,23,24,25,40,41,42,43],[18,19,20,21,22,23,24,25,40,41,42,43],[28,29,30,31,32,44,45,46,47],[11,12,13,14,18,19,20,21],[7,8,9,10,11,12,13,14],[104,105,106,107,108,109],[51,52,53],[62,63,64,65],[55,56,57,58],[66,67,68,69],[70,71,72,73],[74,75,76],[83,84,85,86,87],[88,89,90,91],[77,78,79,80,81],[92,93,94,95],[96,97,98],[116],[110],[111],[112],[113],[114],[115],[],[117],[117,118],[117,118,119],[117,118,119,120],[],[],[],[],[],[],[],[],[],[],[],[]]},
+    english: {"name":"English","next_hour":[false,false,false,false,false,false,false,true,true,true,true,true],"letters":[["I","T","L","I","S","A","H","A","L","F","X"],["T","W","E","N","T","Y","E","F","I","V","E"],["Q","U","A","R","T","E","R","S","T","E","N"],["T","O","K","P","A","S","T","U","O","N","E"],["T","W","O","T","H","R","E","E","S","I","X"],["F","O","U","R","F","I","V","E","T","E","N"],["S","E","V","E","N","E","I","G","H","T","X"],["N","I","N","E","E","L","E","V","E","N","K"],["T","W","E","L","V","E","L","I","G","H","T"],["S","K","Y","E","X","O'","C","L","O","C","K"],["M","T","W","T","F","S","S",".",".",".","."]],"words":[[0,1,3,4],[99,100,101,102,103,104],[11,12,13,14,37,38,39,40],[30,31,32,37,38,39,40],[22,23,24,25,26,27,28,37,38,39,40],[16,17,18,19,20,21,37,38,39,40],[11,12,13,14,16,17,18,19,20,21,37,38,39,40],[6,7,8,9,37,38,39,40],[11,12,13,14,16,17,18,19,20,21,42,43],[16,17,18,19,20,21,42,43],[22,23,24,25,26,27,28,42,43],[30,31,32,42,43],[11,12,13,14,42,43],[88,89,90,91,92,93],[33,34,35],[44,45,46],[47,48,49,50,51],[62,63,64,65],[58,59,60,61],[52,53,54],[66,67,68,69,70],[71,72,73,74,75],[84,85,86,87],[55,56,57],[78,79,80,81,82,83],[116],[110],[111],[112],[113],[114],[115],[],[117],[117,118],[117,118,119],[117,118,119,120],[],[],[],[],[],[],[],[],[],[],[],[]]},
+    korean: {"name":"한국어","next_hour":[false,false,false,false,false,false,false,false,false,false,false,false],"letters":[["지","금","은","우","리","의","소","중","한","시","간"],["열","한","두","세","네","다","섯","여","섯","일","곱"],["오","늘","도","꼭","좋","은","하","루","되","세","요"],["여","덟","아","홉","시","함","께","라","서","좋","아"],["사","랑","하","는","가","족","과","함","께","해","요"],["이","삼","사","오","십","오","분","행","복","하","게"],["스","카","이","엑","스","단","어","시","계","예","요"],["정","각","입","니","다","고","마","워","요","친","구"],["우","리","꿈","을","향","해","오","늘","도","힘","내"],["당","신","과","의","모","든","순","간","이","선","물"],["월","화","수","목","금","토","일",".",".",".","."]],"words":[[0,1,2],[83,84,85,86,87],[59,60,83,84,85],[59,61,83,84,85],[59,60,61,83,84,85],[59,61,65,83,84,85],[59,60,61,65,83,84,85],[59,61,64,83,84,85],[59,60,61,64,83,84,85],[59,61,63,83,84,85],[59,60,61,63,83,84,85],[59,61,62,83,84,85],[59,60,61,62,83,84,85],[19,21,39],[20,39],[19,39],[18,39],[17,39],[15,16,39],[13,14,39],[11,12,39],[39,42,43],[39,40,41],[21,39],[20,21,39],[116],[110],[111],[112],[113],[114],[115],[],[117],[117,118],[117,118,119],[117,118,119,120],[],[],[],[],[],[],[],[],[],[],[],[]]}
+  };
 
   var DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -75,13 +80,10 @@
     return { name: '', nextHour: nextHourFrom(RULES['20']), letters: letters, words: blankRows() };
   }
 
-  function dutchDesign() {
-    return {
-      name: '',
-      nextHour: DUTCH_NEXT_HOUR.slice(),
-      letters: DUTCH_LETTERS.map(function (row) { return Array.from(row); }),
-      words: DUTCH_ROWS.map(function (w) { return w.slice(); })
-    };
+  function exampleDesign(key) {
+    var d = importDesign(JSON.parse(JSON.stringify(EXAMPLES[key])));
+    d.name = '';
+    return d;
   }
 
   /* ---------- import and export ---------- */
@@ -147,7 +149,7 @@
     } catch (e) { return null; }
   }
 
-  var design = load() || dutchDesign();
+  var design = load() || exampleDesign('dutch');
   var mode = 'preview', selectedPhrase = null, selectedCell = null, currentDay = 3;
   var root, gridEl;
 
@@ -486,11 +488,16 @@
       }).catch(function (err) { flash(err.message); });
       e.target.value = '';
     });
-    $('#wcd-start-dutch').addEventListener('click', function () {
-      if (confirm('Start again from the Dutch letter grid? Your current design is replaced.')) replaceDesign(dutchDesign());
+    root.querySelectorAll('[data-example]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (confirm('Start from the ' + b.textContent + ' letter grid? Your current design is replaced.')) {
+          replaceDesign(exampleDesign(b.dataset.example));
+          syncRule();
+        }
+      });
     });
     $('#wcd-start-empty').addEventListener('click', function () {
-      if (confirm('Start again with an empty grid? Your current design is replaced.')) replaceDesign(emptyDesign());
+      if (confirm('Start again with an empty grid? Your current design is replaced.')) { replaceDesign(emptyDesign()); syncRule(); }
     });
 
     syncRule();
