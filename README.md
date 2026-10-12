@@ -15,7 +15,7 @@ All versions are listed under [Releases](https://github.com/SkyexTechnologies/wo
 | --- | --- |
 | `word-clock.yaml` | The ESPHome configuration of the released firmware |
 | `components/` | The `wordclock_layout` ESPHome component |
-| `docs/` | The documentation website |
+| `docs/` | The documentation website (published from the development repository; edits here are overwritten) |
 
 Each release commit holds the exact source of that firmware version. This
 repository is published from Skyex Technologies' development repository;
