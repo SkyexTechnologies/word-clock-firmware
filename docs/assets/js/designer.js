@@ -149,7 +149,7 @@
     } catch (e) { return null; }
   }
 
-  var design = load() || exampleDesign('dutch');
+  var design = load() || exampleDesign('english');
   var mode = 'preview', selectedPhrase = null, selectedCell = null, currentDay = 3;
   var root, gridEl;
 

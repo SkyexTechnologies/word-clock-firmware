@@ -19,8 +19,9 @@ words, or with a name or message hidden among the letters.
 4. **Save & send:** download your design and email the file to
    Skyex Technologies with your order.
 
-To start from one of the example grids (English, Nederlands or 한국어), go to
-**Save & send** and choose it under *Start from an example*. Your design is
+The designer starts with the English example grid. To start from another
+example (Nederlands or 한국어) or an empty grid, go to **Save & send** and
+choose it under *Start from an example*. Your design is
 kept in this browser while you work on it. Download it to keep
 a copy or to continue on another device.
 
