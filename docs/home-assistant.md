@@ -19,7 +19,8 @@ which is built into Home Assistant.
    Devices & services**; the Word Clock appears under *Discovered*. Click
    **Add**.
 3. If it doesn't appear, click **Add integration**, choose **ESPHome** and
-   enter the clock's IP address.
+   enter `word-clock-xxxxxx.local` (see [Getting started](getting-started.html#3-open-the-clocks-web-page))
+   or the clock's IP address.
 
 When it adds the clock, Home Assistant gives it its own encryption key. From
 then on only your Home Assistant can control the clock over the network. The

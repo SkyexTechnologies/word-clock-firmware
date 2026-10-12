@@ -22,6 +22,37 @@ are saved on the clock and kept after a power cut.
 
 Indications that your clock doesn't have are not shown.
 
+## Setting up automatic brightness
+
+With **03. Automatic Brightness** on, the clock adjusts its brightness to the
+light in the room. It is dimmest in the dark and brightest in bright light,
+and fades smoothly in between. You choose both ends; the clock does the rest.
+
+Use the web page on your phone, so you can watch the clock while you adjust
+it. Each change shows on the clock within a second.
+
+1. Check that **03. Automatic Brightness** is on.
+2. **In the dark.** In the evening, switch off the lights so the room is as
+   dark as it usually gets, and wait 15 seconds. Lower or raise
+   **04. Minimum Brightness** until the words are easy to read but don't
+   light up the room.
+3. **In bright light.** During the day, when the room is at its brightest
+   (or with all lights on), wait 15 seconds. Set **05. Maximum Brightness**
+   so the time is easy to read without being glaring.
+
+That's it. The clock measures the light every 15 seconds and fades to the new
+brightness over about 10 seconds, so a light switched on or off doesn't make
+it jump.
+
+{: .note }
+> - Too bright at night? Lower **04. Minimum Brightness**. Too dim during the
+>   day? Raise **05. Maximum Brightness**.
+> - The maximum can't be lower than the minimum: if you set one past the
+>   other, the other follows.
+> - With automatic brightness on, the clock ignores the brightness of
+>   **01. Word Clock**. Switch **03. Automatic Brightness** off to set a fixed
+>   brightness there instead.
+
 ## Time zones
 
 The available regions are UTC, Amsterdam, London, New York, Chicago, Denver,

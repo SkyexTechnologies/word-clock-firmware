@@ -47,4 +47,4 @@ Assistant or the internet as soon as it is back on Wi-Fi.
 ## An update fails
 
 Check that the clock can reach the internet, and try again. If the clock no
-longer starts, install the firmware [over USB](updating.html#over-usb-recovery).
+longer starts, contact Skyex Technologies.

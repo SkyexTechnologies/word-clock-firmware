@@ -8,7 +8,8 @@ nav_order: 2
 ## 1. Connect to Wi-Fi
 
 1. Plug in the clock. Without Wi-Fi settings it starts its own Wi-Fi hotspot,
-   named after the clock (it starts with `word-clock`).
+   named `word-clock-xxxxxx`. The last six characters are unique to your
+   clock; note them, you need them in step 3.
 2. Connect to that hotspot with your phone or laptop. A setup page opens
    automatically. If it doesn't, open `http://192.168.4.1` in a browser.
 3. Pick your Wi-Fi network, enter the password and save. The clock connects
@@ -29,9 +30,20 @@ along all the LEDs. As soon as the time is known, the clock shows it in words.
 
 ## 3. Open the clock's web page
 
-Every clock has its own web page for all its settings, no app needed. Find
-the clock's IP address in your router's list of devices, and open
-`http://<ip-address>` in a browser on the same network.
+Every clock has its own web page for all its settings, no app needed. On a
+phone or computer on the same network, open:
+
+```
+http://word-clock-xxxxxx.local
+```
+
+with `xxxxxx` replaced by the six characters from the hotspot name in step 1,
+for example `http://word-clock-a1b2c3.local`.
+
+If that address doesn't open (some older phones and computers don't support
+`.local` addresses), look up the clock's IP address in your router's list of
+devices, where it appears as `word-clock-xxxxxx`, and open `http://<ip-address>`
+instead. Add a bookmark, so you can find it again later.
 
 The clock uses Amsterdam time unless Home Assistant sets another time zone.
 Live elsewhere? Choose your region under **06. Time Zone**. See
