@@ -11,7 +11,6 @@ on:
       - main
     paths:
       - "docs/**"
-      - "Gemfile"
       - ".github/workflows/pages.yml"
   release:
     types: [released]
@@ -49,18 +48,21 @@ jobs:
       - name: Check out
         uses: actions/checkout@v4
 
+      # docs/Gemfile comes from site/ in the development repository, the same
+      # file its local preview uses.
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: "3.3"
           bundler-cache: true
+          working-directory: docs
 
       - name: Set up Pages
         id: pages
         uses: actions/configure-pages@v5
 
       - name: Build the documentation
-        run: bundle exec jekyll build --source docs --destination _site --baseurl "${{ steps.pages.outputs.base_path }}"
+        run: BUNDLE_GEMFILE=docs/Gemfile bundle exec jekyll build --source docs --destination _site --baseurl "${{ steps.pages.outputs.base_path }}"
         env:
           JEKYLL_ENV: production
 

@@ -2,6 +2,6 @@ _site/
 .jekyll-cache/
 .bundle/
 vendor/
-Gemfile.lock
 .esphome/
 secrets.yaml
+docs/Gemfile.lock
