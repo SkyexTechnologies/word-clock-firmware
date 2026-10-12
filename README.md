@@ -1,7 +1,7 @@
 # Word Clock firmware
 
-Firmware and documentation for the Skyex Technologies Word Clock, a Dutch
-word clock built on [ESPHome](https://esphome.io).
+Firmware and documentation for the Skyex Technologies Word Clock, built on
+[ESPHome](https://esphome.io).
 
 **Documentation:** <https://skyextechnologies.github.io/word-clock-firmware/>
 
