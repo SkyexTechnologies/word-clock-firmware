@@ -51,4 +51,6 @@ Live elsewhere? Choose your region under **06. Time Zone**. See
 
 ## 4. Optional: Home Assistant
 
-To control the clock from Home Assistant, see [Home Assistant](home-assistant.html).
+That's all: the clock is ready to use. Home Assistant is not needed. If you
+use it and want to control the clock from it, see
+[Home Assistant](home-assistant.html).

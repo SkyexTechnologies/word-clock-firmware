@@ -5,6 +5,12 @@ nav_order: 3
 
 # Home Assistant
 
+{: .note }
+> Home Assistant is **optional**. The clock works fully without it: it gets
+> the time from the internet, and you change all settings and install updates
+> on its own web page. Connect it only if you want to use the clock in Home
+> Assistant, for example in automations.
+
 The clock uses the [ESPHome integration](https://www.home-assistant.io/integrations/esphome/),
 which is built into Home Assistant.
 

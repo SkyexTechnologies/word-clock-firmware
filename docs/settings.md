@@ -15,7 +15,7 @@ are saved on the clock and kept after a power cut.
 | **03. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
 | **04. Minimum Brightness** / **05. Maximum Brightness** | The range used by automatic brightness. |
 | **06. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
-| **Indication: It is** | Show or hide "HET IS". |
+| **Indication: It is** | Show or hide the opening words, such as "IT IS". |
 | **Indication: Minutes** | Show or hide the four minute dots. |
 | **Indication: Week Days** | Show or hide the letter for the day of the week. |
 | **Restart Word Clock** | Restarts the clock. |

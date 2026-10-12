@@ -10,13 +10,23 @@
 namespace esphome {
 namespace wordclock_layout {
 
-static const uint8_t NUM_WORDS = 37;
-static const uint8_t MAX_LEDS_PER_WORD = 12;
+// Word table rows:
+//   0      opening words ("HET IS", "IT IS")
+//   1-12   minute phrases for :00, :05, ... :55
+//   13-24  hours 12, 1, ... 11
+//   25-31  weekdays, Sunday ... Saturday
+//   32-36  0 to 4 minute dots
+//   37-48  optional hour words used at :00 instead of rows 13-24, for 12, 1,
+//          ... 11 (German "EIN UHR" vs "FÜNF NACH EINS"); empty = use 13-24
+static const uint8_t NUM_WORDS = 49;
+static const uint8_t MAX_LEDS_PER_WORD = 24;
 static const uint8_t NUM_LEDS = 121;
+static const uint8_t ROW_MINUTES = 1;
+static const uint8_t ROW_HOURS = 13;
+static const uint8_t ROW_HOURS_ON_THE_HOUR = 37;
 
 static const uint32_t CONFIG_MAGIC = 0x574C4B31;  // "WLK1"
-static const uint8_t CONFIG_VERSION = 1;
-static const uint16_t EEPROM_SIZE = 512;
+static const uint8_t CONFIG_VERSION = 2;
 // Sector 1018 (0x405FA000) is reserved by the custom 4 MB linker script.
 // ESPHome preferences remain in sector 1019 (0x405FB000).
 static const uint32_t LAYOUT_FLASH_SECTOR = 1018;
@@ -27,6 +37,9 @@ static const uint8_t FEATURE_MINUTES = 1 << 1;   // four minute dots
 static const uint8_t FEATURE_WEEKDAYS = 1 << 2;  // weekday letters
 static const uint8_t FEATURE_ALL = FEATURE_IT_IS | FEATURE_MINUTES | FEATURE_WEEKDAYS;
 
+// Minute phrases (bits 0-11 of LayoutBlob::next_hour_mask).
+static const uint16_t NEXT_HOUR_ALL = 0x0FFF;
+
 // Per-device factory data. Keep identical to scripts/provision_layout_usb.py.
 struct LayoutBlob {
   uint32_t magic;
@@ -34,10 +47,17 @@ struct LayoutBlob {
   uint8_t hardware_revision;  // 1-255
   uint8_t features;           // FEATURE_* bits
   uint8_t reserved;           // 0
+  // Bit n set: the minute phrase for :(5n) names the next hour, e.g. Dutch
+  // "tien voor half vijf" at 4:20 (bits 4-11), English "twenty-five to five"
+  // at 4:35 (bits 7-11), Korean never (0).
+  uint16_t next_hour_mask;
+  uint16_t reserved2;  // 0
   int8_t words[NUM_WORDS][MAX_LEDS_PER_WORD];
   uint32_t crc;  // CRC-32 (zlib) over all bytes above
 };
-static_assert(sizeof(LayoutBlob) == 456, "LayoutBlob layout must match provision_layout_usb.py");
+static_assert(sizeof(LayoutBlob) == 1192, "LayoutBlob layout must match provision_layout_usb.py");
+// The EEPROM library's buffer, only allocated while reading or writing.
+static const uint16_t EEPROM_SIZE = sizeof(LayoutBlob);
 
 class WordClockLayout : public Component {
  public:
@@ -56,9 +76,12 @@ class WordClockLayout : public Component {
       memset(blob_.words, -1, sizeof(blob_.words));
       blob_.hardware_revision = 0;
       blob_.features = 0;
+      blob_.next_hour_mask = 0;
     } else {
-      ESP_LOGI(TAG, "Loaded word layout from flash (version %u, hardware revision %u, indications 0x%02X)",
-               blob_.version, blob_.hardware_revision, blob_.features);
+      ESP_LOGI(TAG,
+               "Loaded word layout from flash (version %u, hardware revision %u, indications 0x%02X, "
+               "next hour 0x%03X)",
+               blob_.version, blob_.hardware_revision, blob_.features, blob_.next_hour_mask);
     }
   }
 
@@ -67,6 +90,19 @@ class WordClockLayout : public Component {
     if (!loaded_ || word >= NUM_WORDS || slot >= MAX_LEDS_PER_WORD)
       return -1;
     return blob_.words[word][slot];
+  }
+
+  // phrase: 0-11 for :00, :05, ... :55.
+  bool refers_to_next_hour(uint8_t phrase) const { return phrase < 12 && (blob_.next_hour_mask >> phrase) & 1; }
+
+  // Word table row for the hour (0-23) shown with minute phrase 0-11: the
+  // optional :00 hour words when the layout has them, otherwise the normal
+  // hour words.
+  uint8_t hour_row(int hour, uint8_t phrase) const {
+    uint8_t h = hour % 12;
+    if (phrase == 0 && this->led_for(ROW_HOURS_ON_THE_HOUR + h, 0) >= 0)
+      return ROW_HOURS_ON_THE_HOUR + h;
+    return ROW_HOURS + h;
   }
 
   bool is_provisioned() const { return loaded_; }
@@ -78,7 +114,7 @@ class WordClockLayout : public Component {
   // `flat` is NUM_WORDS * MAX_LEDS_PER_WORD entries, row-major. Only called
   // from the factory provisioning API service, never by the update flow.
   bool write_layout(const std::vector<int32_t> &flat, int32_t hardware_revision, bool has_it_is, bool has_minutes,
-                    bool has_weekdays) {
+                    bool has_weekdays, int32_t next_hour_mask) {
     if (flat.size() != (size_t) NUM_WORDS * MAX_LEDS_PER_WORD) {
       ESP_LOGE(TAG, "Layout has %u entries, expected %u", (unsigned) flat.size(),
                (unsigned) (NUM_WORDS * MAX_LEDS_PER_WORD));
@@ -86,6 +122,10 @@ class WordClockLayout : public Component {
     }
     if (hardware_revision < 1 || hardware_revision > 255) {
       ESP_LOGE(TAG, "Hardware revision %ld is outside 1..255", (long) hardware_revision);
+      return false;
+    }
+    if (next_hour_mask < 0 || next_hour_mask > NEXT_HOUR_ALL) {
+      ESP_LOGE(TAG, "Next-hour mask 0x%lX has bits outside the 12 minute phrases", (long) next_hour_mask);
       return false;
     }
 
@@ -106,6 +146,8 @@ class WordClockLayout : public Component {
     blob_.features = (has_it_is ? FEATURE_IT_IS : 0) | (has_minutes ? FEATURE_MINUTES : 0) |
                      (has_weekdays ? FEATURE_WEEKDAYS : 0);
     blob_.reserved = 0;
+    blob_.next_hour_mask = (uint16_t) next_hour_mask;
+    blob_.reserved2 = 0;
     blob_.crc = this->crc_();
 
     // The buffer is only allocated while writing (see setup()).
@@ -130,7 +172,8 @@ class WordClockLayout : public Component {
   bool loaded_{false};
 
   bool values_valid_() const {
-    if (blob_.hardware_revision == 0 || (blob_.features & ~FEATURE_ALL) != 0)
+    if (blob_.hardware_revision == 0 || (blob_.features & ~FEATURE_ALL) != 0 ||
+        (blob_.next_hour_mask & ~NEXT_HOUR_ALL) != 0)
       return false;
     for (uint8_t w = 0; w < NUM_WORDS; w++)
       for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)

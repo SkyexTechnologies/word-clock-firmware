@@ -100,3 +100,331 @@ div.highlighter-rouge,
 figure.highlight {
   border-radius: 8px;
 }
+
+// Language tabs on the home page (radio buttons, no JavaScript).
+.lang-tabs {
+  margin: 1.5rem 0;
+
+  > input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 1.25rem;
+
+    label {
+      cursor: pointer;
+      padding: 0.5rem 1rem;
+      margin-bottom: -1px;
+      border: 1px solid transparent;
+      border-radius: 8px 8px 0 0;
+      font-weight: 500;
+      color: $nav-child-link-color;
+
+      &:hover {
+        color: $link-color;
+      }
+    }
+  }
+
+  .tab-panel {
+    display: none;
+  }
+
+  #tab-nl:checked ~ #panel-nl,
+  #tab-en:checked ~ #panel-en,
+  #tab-ko:checked ~ #panel-ko {
+    display: block;
+  }
+
+  #tab-nl:checked ~ .tab-bar label[for="tab-nl"],
+  #tab-en:checked ~ .tab-bar label[for="tab-en"],
+  #tab-ko:checked ~ .tab-bar label[for="tab-ko"] {
+    color: $body-heading-color;
+    background-color: $body-background-color;
+    border-color: $border-color $border-color $body-background-color;
+  }
+
+  #tab-nl:focus-visible ~ .tab-bar label[for="tab-nl"],
+  #tab-en:focus-visible ~ .tab-bar label[for="tab-en"],
+  #tab-ko:focus-visible ~ .tab-bar label[for="tab-ko"] {
+    outline: 2px solid $link-color;
+  }
+}
+
+.main-content .grid-image {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+}
+
+// Stand-in until a photo of the letter grid is available.
+.image-placeholder {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 2px dashed $border-color;
+  border-radius: 8px;
+  background-color: $sidebar-color;
+  color: $nav-child-link-color;
+}
+
+// Letter grid designer (design-your-own.md, assets/js/designer.js).
+.wcd {
+  margin: 1.5rem 0;
+
+  .wcd-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 1.25rem;
+  }
+
+  .wcd-tab {
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    margin-bottom: -1px;
+    border: 1px solid transparent;
+    border-radius: 8px 8px 0 0;
+    background: none;
+    font: inherit;
+    font-weight: 500;
+    color: $nav-child-link-color;
+
+    &:hover { color: $link-color; }
+
+    &[aria-selected="true"] {
+      color: $body-heading-color;
+      background-color: $body-background-color;
+      border-color: $border-color $border-color $body-background-color;
+    }
+  }
+
+  .wcd-body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+
+  // The clock face stays dark in both themes, like the real clock.
+  .wcd-grid {
+    flex: 0 1 440px;
+    width: 100%;
+    max-width: 440px;
+    display: grid;
+    grid-template-columns: repeat(11, 1fr);
+    gap: 2px;
+    padding: 10px;
+    background: #0b0b0d;
+    border-radius: 10px;
+  }
+
+  .wcd-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    min-width: 0;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background: none;
+    color: #3a3b40;
+    font: inherit;
+    font-size: clamp(0.7rem, 2.6vw, 1.05rem);
+    font-weight: 600;
+    cursor: default;
+    transition: color 0.15s, background-color 0.15s, text-shadow 0.15s;
+
+    &.is-lit {
+      color: #fff;
+      text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+    }
+
+    // Minute dots: a round dot in the middle of the square, in the cell's
+    // text colour (so it lights and dims like the letters).
+    &.is-dot::before {
+      content: "";
+      width: 0.3em;
+      height: 0.3em;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    &.is-dot.is-lit::before {
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+    }
+  }
+
+  .wcd-grid[data-mode="letters"] .wcd-cell,
+  .wcd-grid[data-mode="words"] .wcd-cell {
+    cursor: pointer;
+    color: #8a8c93;
+
+    &:hover { border-color: #55575e; }
+  }
+
+  .wcd-grid[data-mode="words"] .wcd-cell {
+    &.is-used { color: #c9cbd1; background: rgba(255, 255, 255, 0.06); }
+    &.is-dot { color: #c9cbd1; }
+  }
+
+  .wcd-grid .wcd-cell.is-selected {
+    color: #fff;
+    background: rgba(76, 156, 255, 0.35);
+    border-color: #4c9cff;
+  }
+
+  .wcd-side {
+    flex: 1 1 300px;
+    min-width: 0;
+  }
+
+  .wcd-label {
+    display: block;
+    margin: 1rem 0 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: $body-heading-color;
+
+    &:first-child { margin-top: 0; }
+  }
+
+  .wcd-input {
+    width: 100%;
+    max-width: 22rem;
+    padding: 0.45rem 0.6rem;
+    font: inherit;
+    color: $body-text-color;
+    background: $search-background-color;
+    border: 1px solid $border-color;
+    border-radius: 6px;
+  }
+
+  .wcd-letter {
+    max-width: 4rem;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  .wcd-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .wcd-chip {
+    padding: 0.25rem 0.6rem;
+    font: inherit;
+    font-size: 0.85rem;
+    color: $body-text-color;
+    background: $base-button-color;
+    border: 1px solid $border-color;
+    border-radius: 999px;
+    cursor: pointer;
+
+    &.is-active {
+      color: #fff;
+      background: $btn-primary-color;
+      border-color: $btn-primary-color;
+    }
+  }
+
+  .wcd-output {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $body-heading-color;
+    min-height: 1.5em;
+  }
+
+  .wcd-muted { color: $nav-child-link-color; }
+
+  .wcd-phrases {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 22rem;
+    overflow-y: auto;
+    margin-bottom: 0.75rem;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    padding: 4px;
+  }
+
+  .wcd-phrase {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 6px;
+
+    &:hover, &.is-active { background: $feedback-color; }
+    &.is-active .wcd-phrase-main { font-weight: 600; }
+    &.is-optional .wcd-phrase-label { color: $nav-child-link-color; }
+  }
+
+  // Two lines: name and count, then the phrase's letters across the width.
+  .wcd-phrase-main {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    column-gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+    padding: 0.35rem 0.5rem;
+    font: inherit;
+    font-size: 0.85rem;
+    text-align: left;
+    color: $body-text-color;
+    background: none;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .wcd-next-hour {
+    flex: 0 0 auto;
+    padding-right: 0.5rem;
+    font-size: 0.75rem;
+    color: $nav-child-link-color;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .wcd-phrase-label { grid-column: 1; grid-row: 1; }
+  .wcd-phrase-count { grid-column: 2; grid-row: 1; color: $nav-child-link-color; font-size: 0.75rem; }
+  .wcd-phrase-text { grid-column: 1 / -1; grid-row: 2; font-weight: 600; letter-spacing: 0.04em; }
+
+  .wcd-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .wcd-check {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid $border-color;
+    background: $sidebar-color;
+
+    &.is-ok { border-color: #1a7f37; }
+    &.is-warning { border-color: #bf8700; }
+    ul { margin: 0.5rem 0 0; }
+  }
+
+  .wcd-flash { min-height: 1.5em; margin-top: 0.75rem; color: $link-color; }
+}

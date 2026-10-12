@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.0.1"
+  project_version: "1.1.0"
   # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this URL built in: never rename that
@@ -92,10 +92,11 @@ api:
         has_it_is: bool
         has_minutes: bool
         has_weekdays: bool
+        next_hour_mask: int
       then:
         - lambda: |-
             if (!id(layout).write_layout(flat_layout, hardware_revision, has_it_is, has_minutes,
-                                         has_weekdays)) {
+                                         has_weekdays, next_hour_mask)) {
               ESP_LOGE("word_clock", "Failed to save word layout to EEPROM");
             }
 
@@ -618,11 +619,14 @@ light:
             minutes = (int)(total_minutes / 5) * 5 % 60; // minutes per 5
             hours = total_minutes / 60;
 
-            if (minutes >= 20) hours += 1;
+            // The layout says per minute phrase whether it names the next
+            // hour (Dutch from :20, English from :35, Korean never).
+            const uint8_t phrase = minutes / 5;
+            if (id(layout).refers_to_next_hour(phrase)) hours += 1;
 
             CurrentTime[0] = 0;
-            CurrentTime[1] = minutes / 5 + 1;
-            CurrentTime[2] = (hours % 12) + 13;
+            CurrentTime[1] = phrase + wordclock_layout::ROW_MINUTES;
+            CurrentTime[2] = id(layout).hour_row(hours, phrase);
             CurrentTime[3] = time.day_of_week + 24;
             CurrentTime[4] = (total_minutes % 5) + 32;
 
@@ -636,7 +640,7 @@ light:
                                !id(layout).has_feature(wordclock_layout::FEATURE_WEEKDAYS))) continue;
                 if (i == 4 && (!id(indication_minutes).state ||
                                !id(layout).has_feature(wordclock_layout::FEATURE_MINUTES))) continue;
-                for (int j = 0; j < 12; j++) {
+                for (int j = 0; j < wordclock_layout::MAX_LEDS_PER_WORD; j++) {
                   int8_t led = id(layout).led_for(CurrentTime[i], j);
                   if (led >= 0) letters[led] = current_color;
                 }
