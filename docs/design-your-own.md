@@ -122,6 +122,8 @@ while you design.
         <label class="wcd-label" for="wcd-order">Order number</label>
         <input type="text" id="wcd-order" class="wcd-input" required aria-required="true" placeholder="From your order confirmation">
         <div class="wcd-check" id="wcd-send-check"></div>
+        <p class="wcd-muted">Layout revision <strong id="wcd-revision"></strong>. It goes up by
+        one when you open a design you sent before and change it.</p>
         <label class="wcd-confirm">
           <input type="checkbox" id="wcd-confirm">
           I have checked my design in step 4. I understand that it can't be changed
@@ -138,6 +140,15 @@ while you design.
           <button type="button" class="btn" id="wcd-download" disabled>Download only</button>
         </div>
         <div class="wcd-attach is-strong" id="wcd-attach-now" role="alert" hidden></div>
+        <details class="wcd-ha">
+          <summary>Already have your clock? Apply a corrected design through Home Assistant</summary>
+          <p>This changes which squares light up for each word. The letters on your
+          clock stay the same, so use it only to fix a word that lights the wrong
+          squares, a missing letter or the hour rule. Your clock must be added to
+          Home Assistant; see <a href="home-assistant.html#changing-your-layout">Changing your layout</a>.</p>
+          <button type="button" class="btn" id="wcd-ha-copy">Copy for Home Assistant</button>
+          <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
+        </details>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><span></span></div>
       </div>
 

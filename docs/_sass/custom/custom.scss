@@ -521,6 +521,24 @@ figure.highlight {
     }
   }
 
+  .wcd-ha {
+    margin-top: 1.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+
+    summary { cursor: pointer; font-weight: 600; color: $body-heading-color; }
+    p { font-size: 0.9rem; }
+  }
+
+  .wcd-ha-text {
+    display: block;
+    max-width: none;
+    margin-top: 0.75rem;
+    font-family: $mono-font-family;
+    font-size: 0.75rem;
+  }
+
   .wcd-buttons .btn:disabled {
     opacity: 0.45;
     cursor: not-allowed;

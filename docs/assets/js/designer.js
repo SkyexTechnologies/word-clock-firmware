@@ -95,7 +95,7 @@
   function emptyDesign() {
     var letters = [];
     for (var r = 0; r < SIZE; r++) letters.push(new Array(SIZE).fill(''));
-    return { name: '', customer: '', email: '', order: '', nextHour: nextHourFrom(RULES['35']), letters: letters, words: blankRows() };
+    return { name: '', customer: '', email: '', order: '', layoutRevision: 1, nextHour: nextHourFrom(RULES['35']), letters: letters, words: blankRows() };
   }
 
   function exampleDesign(key) {
@@ -117,6 +117,7 @@
     d.customer = typeof data.customer_name === 'string' ? data.customer_name : '';
     d.order = typeof data.order_number === 'string' ? data.order_number : '';
     d.email = typeof data.customer_email === 'string' ? data.customer_email : '';
+    d.layoutRevision = typeof data.layout_revision === 'number' && data.layout_revision > 0 ? data.layout_revision : 1;
     if (Array.isArray(data.next_hour) && data.next_hour.length === 12) {
       d.nextHour = data.next_hour.map(Boolean);
     } else {
@@ -143,6 +144,7 @@
     return {
       version: 2,
       hardware_revision: 1,
+      layout_revision: design.layoutRevision,
       indications: { it_is: rows[0].length > 0, minutes: anyMinutes, weekdays: anyDay },
       next_hour: design.nextHour.slice(),
       words: rows,
@@ -167,6 +169,7 @@
     return '{\n' + [
       '"version": ' + d.version,
       '"hardware_revision": ' + d.hardware_revision,
+      '"layout_revision": ' + d.layout_revision,
       '"indications": {"it_is": ' + i.it_is + ', "minutes": ' + i.minutes + ', "weekdays": ' + i.weekdays + '}',
       '"next_hour": ' + list(d.next_hour),
       '"words": ' + rows(d.words),
@@ -180,6 +183,19 @@
 
   function isMinuteDot(l) {
     return design.words.slice(33, 37).some(function (w) { return w.indexOf(l) !== -1; });
+  }
+
+  /* ---------- layout revision ---------- */
+  // A design opened from a file is a correction of something already sent:
+  // its first change raises the layout revision by one. New designs stay at 1.
+  var openedRevision = null;
+
+  function changed() {
+    if (openedRevision !== null && design.layoutRevision <= openedRevision) {
+      design.layoutRevision = openedRevision + 1;
+      flash('Layout revision ' + design.layoutRevision + ': this is a new version of your design.');
+    }
+    save();
   }
 
   /* ---------- storage (convenience only; the download is the real copy) ---------- */
@@ -283,7 +299,10 @@
     if (step === 'start') $('#wcd-start-shows').textContent = timeText(9, 47);
     if (step === 'words') renderPhraseList();
     if (step === 'check') { $('#wcd-phrase').textContent = timeText(previewTime().hour, previewTime().minute); renderCheck('#wcd-check'); }
-    if (step === 'send') renderCheck('#wcd-send-check');
+    if (step === 'send') {
+      renderCheck('#wcd-send-check');
+      $('#wcd-revision').textContent = design.layoutRevision;
+    }
   }
 
   function renderPhraseList() {
@@ -320,7 +339,7 @@
         box.addEventListener('change', function () {
           design.nextHour[ph.phrase] = box.checked;
           syncRule();
-          save();
+          changed();
           render();
         });
         label.appendChild(box);
@@ -390,7 +409,7 @@
       if (i !== -1) w.splice(i, 1);
       else if (w.length >= MAX_PER_WORD) { flash('A phrase can light at most ' + MAX_PER_WORD + ' letters.'); return; }
       else w.push(l);
-      save();
+      changed();
     }
     render();
   }
@@ -425,7 +444,7 @@
   function slug(text) { return text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase(); }
 
   function fileName() {
-    return (design.order ? 'order-' + slug(design.order) + '-' : '') + 'word-clock-design.json';
+    return (design.order ? 'order-' + slug(design.order) + '-' : '') + 'word-clock-design-r' + design.layoutRevision + '.json';
   }
 
   // Download and email only with the customer's details, and once the
@@ -487,6 +506,7 @@
       (design.customer ? 'Name: ' + design.customer + '\n' : '') +
       (design.email ? 'Email: ' + design.email + '\n' : '') +
       (design.order ? 'Order number: ' + design.order + '\n' : '') +
+      'Layout revision: ' + design.layoutRevision + '\n' +
       'File: ' + fileName() + '\n\n' +
       'I have checked the design and understand it can\'t be changed after sending.\n\n' +
       '(Please attach the file you just downloaded before sending this email.)\n';
@@ -505,6 +525,38 @@
     again.textContent = 'Open the email again';
     note.appendChild(again);
     note.hidden = false;
+  }
+
+  // The set_word_layout action for Home Assistant (Developer tools > Actions,
+  // YAML mode). hardware_revision 0 keeps the clock's own board revision.
+  function homeAssistantAction() {
+    var d = exportDesign(), flat = [];
+    d.words.forEach(function (w) {
+      for (var i = 0; i < MAX_PER_WORD; i++) flat.push(i < w.length ? w[i] : -1);
+    });
+    var mask = d.next_hour.reduce(function (m, v, i) { return v ? m | (1 << i) : m; }, 0);
+    return 'action: esphome.word_clock_xxxxxx_set_word_layout\n' +
+      'data:\n' +
+      '  flat_layout: [' + flat.join(', ') + ']\n' +
+      '  hardware_revision: 0\n' +
+      '  has_it_is: ' + d.indications.it_is + '\n' +
+      '  has_minutes: ' + d.indications.minutes + '\n' +
+      '  has_weekdays: ' + d.indications.weekdays + '\n' +
+      '  next_hour_mask: ' + mask + '\n' +
+      '  layout_revision: ' + d.layout_revision + '\n';
+  }
+
+  function copyHomeAssistant() {
+    var text = homeAssistantAction(), box = $('#wcd-ha-text');
+    box.value = text;
+    box.hidden = false;
+    var done = function () { flash('Copied. Paste it in Home Assistant and replace xxxxxx with your clock\'s code.'); };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, function () { box.select(); flash('Select the text below and copy it.'); });
+    } else {
+      box.select();
+      flash('Select the text below and copy it.');
+    }
   }
 
   // Picture of the clock face at the time and day chosen in step 4.
@@ -593,6 +645,7 @@
         if (edited && !confirm('Start from this grid? Your current design is replaced.')) return;
         replaceDesign(key === 'empty' ? emptyDesign() : exampleDesign(key));
         lastExample = key;
+        openedRevision = null;
         flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.' : 'Grid loaded. Continue with step 2, or change it as you like.');
       });
     });
@@ -603,6 +656,7 @@
       file.text().then(function (text) {
         replaceDesign(importDesign(JSON.parse(text)));
         edited = true;
+        openedRevision = design.layoutRevision;
         flash('Design opened.');
       }).catch(function (err) { flash(err.message); });
       e.target.value = '';
@@ -622,7 +676,7 @@
         var prev = index >= 0 ? design.letters[Math.floor(index / SIZE)] : null;
         if (prev && prev[index % SIZE]) {
           prev[index % SIZE] = cleanLetter(prev[index % SIZE] + "'");
-          save();
+          changed();
         }
         input.value = design.letters[p.row][p.col];
         input.select();
@@ -630,7 +684,7 @@
         return;
       }
       design.letters[p.row][p.col] = chars.length === 2 && APOSTROPHES.indexOf(last) !== -1 ? cleanLetter(value) : cleanLetter(last);
-      save();
+      changed();
       if (chars.length) moveCell(1); else render();
     });
     input.addEventListener('keydown', function (e) {
@@ -643,13 +697,13 @@
     $('#wcd-rule').addEventListener('change', function (e) {
       if (RULES[e.target.value] === undefined) return;
       design.nextHour = nextHourFrom(RULES[e.target.value]);
-      save();
+      changed();
       render();
     });
     $('#wcd-clear-phrase').addEventListener('click', function () {
       if (selectedPhrase === null) return;
       design.words[selectedPhrase] = [];
-      save();
+      changed();
       render();
     });
 
@@ -685,6 +739,7 @@
     order.addEventListener('input', function () { design.order = order.value.trim(); save(); updateSendButtons(); });
     $('#wcd-confirm').addEventListener('change', updateSendButtons);
     $('#wcd-download').addEventListener('click', function () { if (confirmed()) download(); });
+    $('#wcd-ha-copy').addEventListener('click', copyHomeAssistant);
     $('#wcd-email').addEventListener('click', email);
 
     syncRule();
