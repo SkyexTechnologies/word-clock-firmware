@@ -183,32 +183,118 @@ figure.highlight {
 .wcd {
   margin: 1.5rem 0;
 
-  .wcd-tabs {
+  .wcd-steps {
     display: flex;
     flex-wrap: wrap;
     gap: 0.25rem;
-    border-bottom: 1px solid $border-color;
-    margin-bottom: 1.25rem;
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+
+    li { margin: 0; padding: 0; }
+    li::before { content: none; }
   }
 
-  .wcd-tab {
-    cursor: pointer;
-    padding: 0.5rem 1rem;
-    margin-bottom: -1px;
-    border: 1px solid transparent;
-    border-radius: 8px 8px 0 0;
-    background: none;
+  .wcd-step {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem 0.4rem 0.4rem;
     font: inherit;
     font-weight: 500;
     color: $nav-child-link-color;
+    background: none;
+    border: 1px solid $border-color;
+    border-radius: 999px;
+    cursor: pointer;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 50%;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: $feedback-color;
+    }
 
     &:hover { color: $link-color; }
+    &.is-done span { background: $btn-primary-color; color: #fff; }
 
-    &[aria-selected="true"] {
+    &[aria-current="step"] {
       color: $body-heading-color;
-      background-color: $body-background-color;
-      border-color: $border-color $border-color $body-background-color;
+      border-color: $btn-primary-color;
+      span { background: $btn-primary-color; color: #fff; }
     }
+  }
+
+  .wcd-title {
+    margin-top: 0 !important;
+    font-size: 1.15rem !important;
+  }
+
+  .wcd-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+  }
+
+  .wcd-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.75rem;
+    font: inherit;
+    text-align: left;
+    color: $body-text-color;
+    background: $sidebar-color;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    cursor: pointer;
+
+    strong { color: $body-heading-color; }
+    span { font-size: 0.75rem; color: $nav-child-link-color; }
+    &:hover { border-color: $btn-primary-color; }
+  }
+
+  // "Empty grid": the same card, with a light tint of the accent colour so
+  // it reads as a different kind of choice than the languages.
+  .wcd-card-empty {
+    background: rgba($btn-primary-color, 0.1);
+  }
+
+  .wcd-link {
+    padding: 0;
+    font: inherit;
+    color: $link-color;
+    background: none;
+    border: 0;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .wcd-tips {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  .wcd-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .wcd-group {
+    padding: 0.6rem 0.5rem 0.2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: $nav-child-link-color;
   }
 
   .wcd-body {
@@ -407,6 +493,41 @@ figure.highlight {
   .wcd-phrase-label { grid-column: 1; grid-row: 1; }
   .wcd-phrase-count { grid-column: 2; grid-row: 1; color: $nav-child-link-color; font-size: 0.75rem; }
   .wcd-phrase-text { grid-column: 1 / -1; grid-row: 2; font-weight: 600; letter-spacing: 0.04em; }
+
+  .wcd-confirm {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border: 1px solid $border-color;
+    border-radius: 8px;
+    cursor: pointer;
+
+    input { margin-top: 0.25rem; flex: 0 0 auto; }
+  }
+
+  // Reminder that the design must be attached to the email by hand.
+  .wcd-attach {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    border: 1px solid #bf8700;
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: rgba(#bf8700, 0.08);
+
+    &.is-strong {
+      border-color: #d1242f;
+      background: rgba(#d1242f, 0.08);
+    }
+  }
+
+  .wcd-buttons .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
 
   .wcd-buttons {
     display: flex;
