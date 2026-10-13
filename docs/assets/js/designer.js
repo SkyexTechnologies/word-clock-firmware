@@ -194,6 +194,7 @@
     } catch (e) { return null; }
   }
 
+  var lastExample = '';
   var stored = load();
   var design = stored || exampleDesign('english');
   var edited = !!stored;
@@ -506,6 +507,47 @@
     note.hidden = false;
   }
 
+  // Picture of the clock face at the time and day chosen in step 4.
+  function downloadPicture() {
+    var SIZE_PX = 880, PAD = 20, GAP = 4;
+    var cell = (SIZE_PX - 2 * PAD - (SIZE - 1) * GAP) / SIZE;
+    var t = previewTime(), lit = litLeds(t.hour, t.minute, currentDay);
+    var minuteLeds = new Set();
+    design.words.slice(33, 37).forEach(function (w) { w.forEach(function (l) { minuteLeds.add(l); }); });
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = SIZE_PX;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0b0b0d';
+    ctx.fillRect(0, 0, SIZE_PX, SIZE_PX);
+    var fontSize = Math.round(cell * 0.42);
+    ctx.font = '600 ' + fontSize + 'px Inter, system-ui, -apple-system, "Hiragino Sans", "Apple SD Gothic Neo", "PingFang SC", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var l = led(r, c), on = lit.has(l);
+        var ch = design.letters[r][c] || (minuteLeds.has(l) ? DOT : '');
+        var x = PAD + c * (cell + GAP) + cell / 2, y = PAD + r * (cell + GAP) + cell / 2;
+        ctx.fillStyle = on ? '#ffffff' : '#3a3b40';
+        ctx.shadowColor = on ? 'rgba(255, 255, 255, 0.7)' : 'transparent';
+        ctx.shadowBlur = on ? 16 : 0;
+        if (ch === DOT) {
+          ctx.beginPath();
+          ctx.arc(x, y, fontSize * 0.15, 0, 2 * Math.PI);
+          ctx.fill();
+        } else if (ch) {
+          ctx.fillText(ch, x, y);
+        }
+      }
+    }
+    var a = document.createElement('a');
+    a.href = canvas.toDataURL('image/jpeg', 0.92);
+    a.download = 'example-' + (lastExample || 'design') + '-' + String(t.hour).padStart(2, '0') + String(t.minute).padStart(2, '0') + '.jpg';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   function replaceDesign(next) {
     // Keep the customer's name and order number when switching grids.
     next.customer = next.customer || design.customer;
@@ -550,6 +592,7 @@
         var key = b.dataset.example;
         if (edited && !confirm('Start from this grid? Your current design is replaced.')) return;
         replaceDesign(key === 'empty' ? emptyDesign() : exampleDesign(key));
+        lastExample = key;
         flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.' : 'Grid loaded. Continue with step 2, or change it as you like.');
       });
     });
@@ -612,6 +655,9 @@
 
     // Step 4: check
     $('#wcd-time').addEventListener('input', render);
+    $('#wcd-picture').addEventListener('click', function () {
+      (document.fonts ? document.fonts.ready : Promise.resolve()).then(downloadPicture);
+    });
     var days = $('#wcd-days');
     [1, 2, 3, 4, 5, 6, 0].forEach(function (d) {
       var b = document.createElement('button');

@@ -22,22 +22,30 @@ firmware, and you install new firmware with one click.
 The clock lights the words for the time in steps of five minutes. The four
 dots in the corner add the minutes in between, one dot per minute, and a row
 of letters shows the day of the week. The words depend on the language of the
-letter grid. Below are some examples; you can also
-[design your own letter grid](design-your-own.html), starting from one of these.
+letter grid.
+
+The five grids below are just examples. Letter grids are also available in
+Español, Português, Italiano, Frysk, Svenska, Norsk, Dansk, 日本語 and 中文,
+and you can [design your own letter grid](design-your-own.html), starting
+from any of them or from an empty grid, so your clock can speak any language.
 
 <div class="lang-tabs">
   <input type="radio" name="lang-tabs" id="tab-en" checked>
+  <input type="radio" name="lang-tabs" id="tab-de">
+  <input type="radio" name="lang-tabs" id="tab-fr">
   <input type="radio" name="lang-tabs" id="tab-nl">
   <input type="radio" name="lang-tabs" id="tab-ko">
   <div class="tab-bar">
     <label for="tab-en">English</label>
-    <label for="tab-nl">Nederlands</label>
+    <label for="tab-de" lang="de">Deutsch</label>
+    <label for="tab-fr" lang="fr">Français</label>
+    <label for="tab-nl" lang="nl">Nederlands</label>
     <label for="tab-ko" lang="ko">한국어</label>
   </div>
 
 <div class="tab-panel" id="panel-en" markdown="1">
 
-![An English letter grid showing IT IS QUARTER TO TEN, two minute dots and the W for Wednesday]({{ '/images/example-english.png' | relative_url }}){: .grid-image }
+![An English letter grid showing IT IS QUARTER TO TEN, two minute dots and the W for Wednesday]({{ '/images/example-english.jpg' | relative_url }}){: .grid-image }
 *9:47 on a Wednesday: IT IS QUARTER TO TEN, two dots for the two extra minutes, and the W.*
 
 | Time | The clock shows |
@@ -53,9 +61,45 @@ letter grid. Below are some examples; you can also
 
 </div>
 
+<div class="tab-panel" id="panel-de" markdown="1">
+
+![A German letter grid showing ES IST VIERTEL VOR ZEHN, two minute dots and the M for Wednesday]({{ '/images/example-german.jpg' | relative_url }}){: .grid-image }
+*9:47 on a Wednesday: ES IST VIERTEL VOR ZEHN, two dots for the two extra minutes, and the M (Mittwoch).*
+
+| Time | The clock shows |
+| --- | --- |
+| 1:00 | **ES IST EIN UHR** |
+| 3:00 | **ES IST DREI UHR** |
+| 7:15 | **ES IST VIERTEL NACH SIEBEN** |
+| 4:20 | **ES IST ZWANZIG NACH VIER** |
+| 4:25 | **ES IST FÜNF VOR HALB FÜNF** |
+| 4:30 | **ES IST HALB FÜNF** |
+| 4:43 | **ES IST ZWANZIG VOR FÜNF** and three dots |
+| 9:45 | **ES IST VIERTEL VOR ZEHN** |
+
+</div>
+
+<div class="tab-panel" id="panel-fr" markdown="1">
+
+![A French letter grid showing IL EST DIX HEURES MOINS LE QUART, two minute dots and the M for Wednesday]({{ '/images/example-french.jpg' | relative_url }}){: .grid-image }
+*9:47 on a Wednesday: IL EST DIX HEURES MOINS LE QUART, two dots for the two extra minutes, and the M (mercredi).*
+
+| Time | The clock shows |
+| --- | --- |
+| 1:00 | **IL EST UNE HEURE** |
+| 3:00 | **IL EST TROIS HEURES** |
+| 7:15 | **IL EST SEPT HEURES ET QUART** |
+| 4:20 | **IL EST QUATRE HEURES VINGT** |
+| 4:30 | **IL EST QUATRE HEURES ET DEMIE** |
+| 4:35 | **IL EST CINQ HEURES MOINS VINGT-CINQ** |
+| 4:43 | **IL EST CINQ HEURES MOINS VINGT** and three dots |
+| 9:45 | **IL EST DIX HEURES MOINS LE QUART** |
+
+</div>
+
 <div class="tab-panel" id="panel-nl" markdown="1">
 
-![A Dutch letter grid showing HET IS KWART VOOR TIEN, two minute dots and the W for Wednesday]({{ '/images/example-dutch.png' | relative_url }}){: .grid-image }
+![A Dutch letter grid showing HET IS KWART VOOR TIEN, two minute dots and the W for Wednesday]({{ '/images/example-dutch.jpg' | relative_url }}){: .grid-image }
 *9:47 on a Wednesday: HET IS KWART VOOR TIEN, two dots for the two extra minutes, and the W.*
 
 | Time | The clock shows |
@@ -74,7 +118,7 @@ The bottom row reads M D W D V Z Z, Monday to Sunday: on a Wednesday, the
 
 <div class="tab-panel" id="panel-ko" markdown="1">
 
-![A Korean letter grid showing 지금은 아홉 시 사십오 분입니다, two minute dots and 수 for Wednesday]({{ '/images/example-korean.png' | relative_url }}){: .grid-image }
+![A Korean letter grid showing 지금은 아홉 시 사십오 분입니다, two minute dots and 수 for Wednesday]({{ '/images/example-korean.jpg' | relative_url }}){: .grid-image }
 *9:47 on a Wednesday: 지금은 아홉 시 사십오 분입니다, two dots for the two extra minutes, and 수.*
 
 | Time | The clock shows |

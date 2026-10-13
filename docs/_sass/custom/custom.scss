@@ -137,24 +137,21 @@ figure.highlight {
     display: none;
   }
 
-  #tab-nl:checked ~ #panel-nl,
-  #tab-en:checked ~ #panel-en,
-  #tab-ko:checked ~ #panel-ko {
-    display: block;
-  }
+  // One entry per language tab on the home page (tab-xx / panel-xx).
+  @each $lang in en, de, fr, nl, ko {
+    #tab-#{$lang}:checked ~ #panel-#{$lang} {
+      display: block;
+    }
 
-  #tab-nl:checked ~ .tab-bar label[for="tab-nl"],
-  #tab-en:checked ~ .tab-bar label[for="tab-en"],
-  #tab-ko:checked ~ .tab-bar label[for="tab-ko"] {
-    color: $body-heading-color;
-    background-color: $body-background-color;
-    border-color: $border-color $border-color $body-background-color;
-  }
+    #tab-#{$lang}:checked ~ .tab-bar label[for="tab-#{$lang}"] {
+      color: $body-heading-color;
+      background-color: $body-background-color;
+      border-color: $border-color $border-color $body-background-color;
+    }
 
-  #tab-nl:focus-visible ~ .tab-bar label[for="tab-nl"],
-  #tab-en:focus-visible ~ .tab-bar label[for="tab-en"],
-  #tab-ko:focus-visible ~ .tab-bar label[for="tab-ko"] {
-    outline: 2px solid $link-color;
+    #tab-#{$lang}:focus-visible ~ .tab-bar label[for="tab-#{$lang}"] {
+      outline: 2px solid $link-color;
+    }
   }
 }
 

@@ -91,7 +91,8 @@ while you design.
 
       <div class="wcd-panel" data-step="check" hidden>
         <h3 class="wcd-title">4. Check your clock</h3>
-        <p>Try a few times and days and read what the clock says.</p>
+        <p>Try a few times and days and read what the clock says. You can also
+        save a picture of the clock at that time.</p>
         <label class="wcd-label" for="wcd-time">Time</label>
         <input type="time" id="wcd-time" class="wcd-input" value="09:47">
         <div class="wcd-chips">
@@ -107,6 +108,7 @@ while you design.
         <span class="wcd-label">The clock shows</span>
         <p class="wcd-output" id="wcd-phrase"></p>
         <div class="wcd-check" id="wcd-check"></div>
+        <button type="button" class="btn" id="wcd-picture">Download picture (JPEG)</button>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><button type="button" class="btn btn-primary" data-go="next">Next: send</button></div>
       </div>
 
