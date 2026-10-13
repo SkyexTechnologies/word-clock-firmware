@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.1.0"
+  project_version: "1.2.0"
   # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this URL built in: never rename that
@@ -93,10 +93,12 @@ api:
         has_minutes: bool
         has_weekdays: bool
         next_hour_mask: int
+        # Design version (0 = not set); hardware_revision 0 keeps the clock's own.
+        layout_revision: int
       then:
         - lambda: |-
             if (!id(layout).write_layout(flat_layout, hardware_revision, has_it_is, has_minutes,
-                                         has_weekdays, next_hour_mask)) {
+                                         has_weekdays, next_hour_mask, layout_revision)) {
               ESP_LOGE("word_clock", "Failed to save word layout to EEPROM");
             }
 
@@ -472,7 +474,9 @@ text_sensor:
       if (id(layout).has_feature(FEATURE_MINUTES)) fitted += "minutes, ";
       if (id(layout).has_feature(FEATURE_WEEKDAYS)) fitted += "weekdays, ";
       fitted = fitted.empty() ? std::string("none") : fitted.substr(0, fitted.size() - 2);
-      return "Revision " + std::to_string(id(layout).hardware_revision()) + " (indications: " + fitted + ")";
+      std::string layout_rev = id(layout).layout_revision()
+          ? ", layout " + std::to_string(id(layout).layout_revision()) : std::string("");
+      return "Revision " + std::to_string(id(layout).hardware_revision()) + layout_rev + " (indications: " + fitted + ")";
   - platform: template
     name: "Firmware Update"
     icon: "mdi:update"

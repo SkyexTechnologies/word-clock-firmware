@@ -51,7 +51,9 @@ struct LayoutBlob {
   // "tien voor half vijf" at 4:20 (bits 4-11), English "twenty-five to five"
   // at 4:35 (bits 7-11), Korean never (0).
   uint16_t next_hour_mask;
-  uint16_t reserved2;  // 0
+  // Version of this clock's design (1, 2, ... as the customer corrects it);
+  // 0 = not set. Was reserved (always 0) before firmware 1.2.0.
+  uint16_t layout_revision;
   int8_t words[NUM_WORDS][MAX_LEDS_PER_WORD];
   uint32_t crc;  // CRC-32 (zlib) over all bytes above
 };
@@ -77,11 +79,12 @@ class WordClockLayout : public Component {
       blob_.hardware_revision = 0;
       blob_.features = 0;
       blob_.next_hour_mask = 0;
+      blob_.layout_revision = 0;
     } else {
       ESP_LOGI(TAG,
-               "Loaded word layout from flash (version %u, hardware revision %u, indications 0x%02X, "
-               "next hour 0x%03X)",
-               blob_.version, blob_.hardware_revision, blob_.features, blob_.next_hour_mask);
+               "Loaded word layout from flash (version %u, hardware revision %u, layout revision %u, "
+               "indications 0x%02X, next hour 0x%03X)",
+               blob_.version, blob_.hardware_revision, blob_.layout_revision, blob_.features, blob_.next_hour_mask);
     }
   }
 
@@ -108,20 +111,35 @@ class WordClockLayout : public Component {
   bool is_provisioned() const { return loaded_; }
   // 0 while unprovisioned.
   uint8_t hardware_revision() const { return blob_.hardware_revision; }
+  // 0 while unprovisioned or not set.
+  uint16_t layout_revision() const { return blob_.layout_revision; }
   // An unprovisioned clock reports every indication, so nothing is hidden.
   bool has_feature(uint8_t feature) const { return !loaded_ || (blob_.features & feature) != 0; }
 
-  // `flat` is NUM_WORDS * MAX_LEDS_PER_WORD entries, row-major. Only called
-  // from the factory provisioning API service, never by the update flow.
+  // `flat` is NUM_WORDS * MAX_LEDS_PER_WORD entries, row-major. Called from
+  // the set_word_layout API action (factory script, or a customer through
+  // Home Assistant), never by the update flow. hardware_revision 0 keeps the
+  // clock's stored revision, so a customer can't change it by accident.
   bool write_layout(const std::vector<int32_t> &flat, int32_t hardware_revision, bool has_it_is, bool has_minutes,
-                    bool has_weekdays, int32_t next_hour_mask) {
+                    bool has_weekdays, int32_t next_hour_mask, int32_t layout_revision) {
     if (flat.size() != (size_t) NUM_WORDS * MAX_LEDS_PER_WORD) {
       ESP_LOGE(TAG, "Layout has %u entries, expected %u", (unsigned) flat.size(),
                (unsigned) (NUM_WORDS * MAX_LEDS_PER_WORD));
       return false;
     }
+    if (hardware_revision == 0) {
+      if (!loaded_) {
+        ESP_LOGE(TAG, "Hardware revision 0 (keep) needs a stored layout; send the revision (1..255)");
+        return false;
+      }
+      hardware_revision = blob_.hardware_revision;
+    }
     if (hardware_revision < 1 || hardware_revision > 255) {
       ESP_LOGE(TAG, "Hardware revision %ld is outside 1..255", (long) hardware_revision);
+      return false;
+    }
+    if (layout_revision < 0 || layout_revision > 65535) {
+      ESP_LOGE(TAG, "Layout revision %ld is outside 0..65535", (long) layout_revision);
       return false;
     }
     if (next_hour_mask < 0 || next_hour_mask > NEXT_HOUR_ALL) {
@@ -147,7 +165,7 @@ class WordClockLayout : public Component {
                      (has_weekdays ? FEATURE_WEEKDAYS : 0);
     blob_.reserved = 0;
     blob_.next_hour_mask = (uint16_t) next_hour_mask;
-    blob_.reserved2 = 0;
+    blob_.layout_revision = (uint16_t) layout_revision;
     blob_.crc = this->crc_();
 
     // The buffer is only allocated while writing (see setup()).
@@ -156,9 +174,9 @@ class WordClockLayout : public Component {
     loaded_ = this->layout_eeprom_.commit();
     this->layout_eeprom_.end();
     if (loaded_) {
-      ESP_LOGI(TAG, "Saved word layout to EEPROM (hardware revision %u, indications 0x%02X); restart to apply "
-                    "indication visibility",
-               blob_.hardware_revision, blob_.features);
+      ESP_LOGI(TAG, "Saved word layout to EEPROM (hardware revision %u, layout revision %u, indications 0x%02X); "
+                    "restart to apply indication visibility",
+               blob_.hardware_revision, blob_.layout_revision, blob_.features);
     } else {
       ESP_LOGE(TAG, "EEPROM commit failed; word layout is unavailable until reboot or reprovisioning");
     }
