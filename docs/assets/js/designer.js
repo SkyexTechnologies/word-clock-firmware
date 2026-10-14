@@ -375,23 +375,46 @@
     return list;
   }
 
+  // Languages switch to the next hour once and keep it until the full hour.
+  // Ticks that aren't one block up to x:55 are allowed but probably a mistake.
+  function hourRuleWarning() {
+    var ticked = [];
+    for (var i = 1; i < 12; i++) if (design.nextHour[i]) ticked.push(i);
+    if (!ticked.length) return null;
+    var block = true;
+    for (i = ticked[0]; i < 12; i++) if (!design.nextHour[i]) block = false;
+    if (block) return null;
+    var names = ticked.map(function (i) { return 'x:' + String(i * 5).padStart(2, '0'); });
+    var list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+    return 'Next hour is ticked for ' + list + ', but not for every phrase after it. Languages usually ' +
+      'switch to the next hour once and keep saying it until the full hour. Check in step 4 that the ' +
+      'clock says the right hour.';
+  }
+
   function renderCheck(sel) {
-    var found = problems(), box = $(sel);
+    var found = problems(), warning = hourRuleWarning(), box = $(sel);
     box.innerHTML = '';
     if (!found.length) {
       var extras = [['opening words', design.words[0].length], ['weekdays', design.words.slice(25, 32).some(function (w) { return w.length; })],
         ['minute dots', design.words.slice(33, 37).some(function (w) { return w.length; })]];
       var without = extras.filter(function (e) { return !e[1]; }).map(function (e) { return e[0]; });
       box.textContent = 'Your design is complete.' + (without.length ? ' It has no ' + without.join(' and ') + ' (optional).' : '');
-      box.className = 'wcd-check is-ok';
-      return;
+      box.className = 'wcd-check ' + (warning ? 'is-warning' : 'is-ok');
+    } else {
+      box.className = 'wcd-check is-warning';
+      box.appendChild(document.createTextNode('Still to do (step 3, Words):'));
+      var ul = document.createElement('ul');
+      found.forEach(function (p) { var li = document.createElement('li'); li.textContent = p; ul.appendChild(li); });
+      box.appendChild(ul);
     }
-    box.className = 'wcd-check is-warning';
-    box.appendChild(document.createTextNode('Still to do (step 3, Words):'));
-    var ul = document.createElement('ul');
-    found.forEach(function (p) { var li = document.createElement('li'); li.textContent = p; ul.appendChild(li); });
-    box.appendChild(ul);
+    if (warning) {
+      var note = document.createElement('p');
+      note.className = 'wcd-check-note';
+      note.textContent = warning;
+      box.appendChild(note);
+    }
   }
+
 
   /* ---------- interaction ---------- */
   function onCell(l) {
