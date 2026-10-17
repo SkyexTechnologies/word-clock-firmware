@@ -37,7 +37,7 @@ aux_links_new_tab: true
 back_to_top: true
 back_to_top_text: "Back to top"
 
-footer_content: "© Skyex Technologies. Firmware licensed under the GNU GPL v3."
+# Footer text: _includes/footer_custom.html (links need relative_url).
 
 callouts:
   note:

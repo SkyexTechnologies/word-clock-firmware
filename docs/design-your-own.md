@@ -119,7 +119,8 @@ while you design.
           <strong>Use the details from your order.</strong> Fill in the same name
           and email address you used when ordering your clock, and its order
           number. If the order number doesn't match an order, your clock won't go
-          into production. All three fields are required.
+          into production. All three fields are required. See our
+          <a href="privacy.html">privacy statement</a> for what we do with them.
         </div>
         <label class="wcd-label" for="wcd-customer">Your name</label>
         <input type="text" id="wcd-customer" class="wcd-input" autocomplete="name" required aria-required="true">
