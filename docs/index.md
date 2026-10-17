@@ -24,116 +24,43 @@ dots in the corner add the minutes in between, one dot per minute, and a row
 of letters shows the day of the week. The words depend on the language of the
 letter grid.
 
-The five grids below are just examples. Letter grids are also available in
-Español, Português, Italiano, Frysk, Svenska, Norsk, Dansk, Türkçe, 日本語 and 中文,
-and you can [design your own letter grid](design-your-own.html), starting
-from any of them or from an empty grid, so your clock can speak any language.
+Choose a language to see what the clock shows right now. These are example
+grids: you can also [design your own letter grid](design-your-own.html),
+starting from any of them or from an empty grid, so your clock can speak any
+language. To try other times, use step 4 of the designer. The colour picker
+only changes this picture; on your clock you set the colour on its web page
+or in Home Assistant.
 
-<div class="lang-tabs">
-  <input type="radio" name="lang-tabs" id="tab-en" checked>
-  <input type="radio" name="lang-tabs" id="tab-de">
-  <input type="radio" name="lang-tabs" id="tab-fr">
-  <input type="radio" name="lang-tabs" id="tab-nl">
-  <input type="radio" name="lang-tabs" id="tab-ko">
-  <div class="tab-bar">
-    <label for="tab-en">English</label>
-    <label for="tab-de" lang="de">Deutsch</label>
-    <label for="tab-fr" lang="fr">Français</label>
-    <label for="tab-nl" lang="nl">Nederlands</label>
-    <label for="tab-ko" lang="ko">한국어</label>
+<div id="wcl" class="wcd wcl" data-layouts="{{ '/layouts/' | relative_url }}">
+  <div class="wcd-chips wcl-langs" role="group" aria-label="Language of the letter grid">
+    <button type="button" class="wcd-chip" data-lang="english" lang="en">English</button>
+    <button type="button" class="wcd-chip" data-lang="german" lang="de">Deutsch</button>
+    <button type="button" class="wcd-chip" data-lang="french" lang="fr">Français</button>
+    <button type="button" class="wcd-chip" data-lang="spanish" lang="es">Español</button>
+    <button type="button" class="wcd-chip" data-lang="portuguese" lang="pt">Português</button>
+    <button type="button" class="wcd-chip" data-lang="italian" lang="it">Italiano</button>
+    <button type="button" class="wcd-chip" data-lang="dutch" lang="nl">Nederlands</button>
+    <button type="button" class="wcd-chip" data-lang="frisian" lang="fy">Frysk</button>
+    <button type="button" class="wcd-chip" data-lang="swedish" lang="sv">Svenska</button>
+    <button type="button" class="wcd-chip" data-lang="norwegian" lang="nb">Norsk</button>
+    <button type="button" class="wcd-chip" data-lang="danish" lang="da">Dansk</button>
+    <button type="button" class="wcd-chip" data-lang="turkish" lang="tr">Türkçe</button>
+    <button type="button" class="wcd-chip" data-lang="korean" lang="ko">한국어</button>
+    <button type="button" class="wcd-chip" data-lang="japanese" lang="ja">日本語</button>
+    <button type="button" class="wcd-chip" data-lang="chinese" lang="zh">中文</button>
   </div>
-
-<div class="tab-panel" id="panel-en" markdown="1">
-
-![An English letter grid showing IT IS QUARTER TO TEN, two minute dots and the W for Wednesday]({{ '/images/example-english.jpg' | relative_url }}){: .grid-image }
-*9:47 on a Wednesday: IT IS QUARTER TO TEN, two dots for the two extra minutes, and the W.*
-
-| Time | The clock shows |
-| --- | --- |
-| 3:00 | **IT IS THREE O'CLOCK** |
-| 6:05 | **IT IS FIVE PAST SIX** |
-| 7:15 | **IT IS QUARTER PAST SEVEN** |
-| 4:20 | **IT IS TWENTY PAST FOUR** |
-| 4:30 | **IT IS HALF PAST FOUR** |
-| 4:40 | **IT IS TWENTY TO FIVE** |
-| 4:43 | **IT IS TWENTY TO FIVE** and three dots |
-| 9:45 | **IT IS QUARTER TO TEN** |
-
+  <div class="wcl-colour">
+    <label for="wcl-colour">Colour</label>
+    <input type="color" id="wcl-colour" value="#ffffff">
+    <button type="button" class="wcl-link" id="wcl-colour-reset">White</button>
+  </div>
+  <div class="wcd-grid wcl-grid" id="wcl-grid" role="img" aria-label="The word clock at the current time"></div>
+  <p class="wcl-says">Right now (<span id="wcl-time"></span>) it says: <strong id="wcl-text"></strong></p>
+  <ul class="wcl-explain" id="wcl-explain"></ul>
 </div>
 
-<div class="tab-panel" id="panel-de" markdown="1">
-
-![A German letter grid showing ES IST VIERTEL VOR ZEHN, two minute dots and the M for Wednesday]({{ '/images/example-german.jpg' | relative_url }}){: .grid-image }
-*9:47 on a Wednesday: ES IST VIERTEL VOR ZEHN, two dots for the two extra minutes, and the M (Mittwoch).*
-
-| Time | The clock shows |
-| --- | --- |
-| 1:00 | **ES IST EIN UHR** |
-| 3:00 | **ES IST DREI UHR** |
-| 7:15 | **ES IST VIERTEL NACH SIEBEN** |
-| 4:20 | **ES IST ZWANZIG NACH VIER** |
-| 4:25 | **ES IST FÜNF VOR HALB FÜNF** |
-| 4:30 | **ES IST HALB FÜNF** |
-| 4:43 | **ES IST ZWANZIG VOR FÜNF** and three dots |
-| 9:45 | **ES IST VIERTEL VOR ZEHN** |
-
-</div>
-
-<div class="tab-panel" id="panel-fr" markdown="1">
-
-![A French letter grid showing IL EST DIX HEURES MOINS LE QUART, two minute dots and the M for Wednesday]({{ '/images/example-french.jpg' | relative_url }}){: .grid-image }
-*9:47 on a Wednesday: IL EST DIX HEURES MOINS LE QUART, two dots for the two extra minutes, and the M (mercredi).*
-
-| Time | The clock shows |
-| --- | --- |
-| 1:00 | **IL EST UNE HEURE** |
-| 3:00 | **IL EST TROIS HEURES** |
-| 7:15 | **IL EST SEPT HEURES ET QUART** |
-| 4:20 | **IL EST QUATRE HEURES VINGT** |
-| 4:30 | **IL EST QUATRE HEURES ET DEMIE** |
-| 4:35 | **IL EST CINQ HEURES MOINS VINGT-CINQ** |
-| 4:43 | **IL EST CINQ HEURES MOINS VINGT** and three dots |
-| 9:45 | **IL EST DIX HEURES MOINS LE QUART** |
-
-</div>
-
-<div class="tab-panel" id="panel-nl" markdown="1">
-
-![A Dutch letter grid showing HET IS KWART VOOR TIEN, two minute dots and the W for Wednesday]({{ '/images/example-dutch.jpg' | relative_url }}){: .grid-image }
-*9:47 on a Wednesday: HET IS KWART VOOR TIEN, two dots for the two extra minutes, and the W.*
-
-| Time | The clock shows |
-| --- | --- |
-| 3:00 | **HET IS DRIE UUR** |
-| 7:15 | **HET IS KWART OVER ZEVEN** |
-| 4:20 | **HET IS TIEN VOOR HALF VIJF** |
-| 4:23 | **HET IS TIEN VOOR HALF VIJF** and three dots |
-| 5:35 | **HET IS VIJF OVER HALF ZES** |
-| 9:45 | **HET IS KWART VOOR TIEN** |
-
-The bottom row reads M D W D V Z Z, Monday to Sunday: on a Wednesday, the
-**W** lights up as well.
-
-</div>
-
-<div class="tab-panel" id="panel-ko" markdown="1">
-
-![A Korean letter grid showing 지금은 아홉 시 사십오 분입니다, two minute dots and 수 for Wednesday]({{ '/images/example-korean.jpg' | relative_url }}){: .grid-image }
-*9:47 on a Wednesday: 지금은 아홉 시 사십오 분입니다, two dots for the two extra minutes, and 수.*
-
-| Time | The clock shows |
-| --- | --- |
-| 3:00 | **지금은 세 시 정각입니다** |
-| 7:15 | **지금은 일곱 시 십오 분입니다** |
-| 4:20 | **지금은 네 시 이십 분입니다** |
-| 4:40 | **지금은 네 시 사십 분입니다** |
-| 4:43 | **지금은 네 시 사십 분입니다** and three dots |
-| 12:55 | **지금은 열두 시 오십오 분입니다** |
-
-The bottom row reads 월 화 수 목 금 토 일, Monday to Sunday.
-
-</div>
-</div>
+<script src="{{ '/assets/js/wordclock.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/home-clock.js' | relative_url }}" defer></script>
 
 ## Where to start
 

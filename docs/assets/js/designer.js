@@ -17,11 +17,12 @@
 (function () {
   'use strict';
 
-  var SIZE = 11, LEDS = 121, MAX_PER_WORD = 24, ROWS = 49, STORAGE_KEY = 'word-clock-design';
+  // Grid, layout files and the firmware's rules: assets/js/wordclock.js.
+  var WC = window.WordClock;
+  var SIZE = WC.SIZE, LEDS = WC.LEDS, MAX_PER_WORD = WC.MAX_PER_WORD, DOT = WC.DOT;
+  var STORAGE_KEY = 'word-clock-design';
   // Address the "Email your design" button writes to (also shown in step 5).
   var ORDER_EMAIL = 'skyex.technologies@gmail.com';
-  // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
-  var DOT = '.';
   var APOSTROPHES = ["'", '’'];
   var STEPS = ['start', 'letters', 'words', 'check', 'send'];
 
@@ -33,20 +34,7 @@
   var MINUTE_NAMES = ['on the hour', '5 past', '10 past', 'quarter past', '20 past', '25 past',
     'half past', '25 to', '20 to', 'quarter to', '10 to', '5 to'];
 
-  function led(row, col) { return row % 2 === 0 ? row * SIZE + col : row * SIZE + (SIZE - 1 - col); }
-  function pos(index) {
-    var row = Math.floor(index / SIZE), c = index % SIZE;
-    return { row: row, col: row % 2 === 0 ? c : SIZE - 1 - c };
-  }
-  // One square holds one character, or a letter with an apostrophe ("O'"
-  // in O'CLOCK), like the DXF generator's tokens. Older designs used a
-  // middle dot for the minute dots.
-  function cleanLetter(c) {
-    if (typeof c !== 'string') return '';
-    c = c.replace(/·/g, DOT).replace(/’/g, "'");
-    var chars = Array.from(c);
-    return chars.length > 1 && chars[1] === "'" ? chars[0] + "'" : (chars[0] || '');
-  }
+  var led = WC.led, pos = WC.pos, cleanLetter = WC.cleanLetter;
   function clock(h, m) { return h + ':' + String(m).padStart(2, '0'); }
 
   // Words step: phrases in groups. {group, label, hint, row, phrase (minute
@@ -74,20 +62,15 @@
   // next hour.
   var RULES = { '15': 3, '20': 4, '25': 5, '35': 7, never: 12 };
 
-  function blankRows() { var r = []; for (var i = 0; i < ROWS; i++) r.push([]); return r; }
-  function nextHourFrom(first) { var a = []; for (var i = 0; i < 12; i++) a.push(i >= first); return a; }
+  var nextHourFrom = WC.nextHourFrom;
 
   function emptyDesign() {
-    var letters = [];
-    for (var r = 0; r < SIZE; r++) letters.push(new Array(SIZE).fill(''));
-    return { name: '', customer: '', email: '', order: '', layoutRevision: 1, nextHour: nextHourFrom(RULES['35']), letters: letters, words: blankRows() };
+    return { name: '', customer: '', email: '', order: '', layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
+      letters: WC.blankLetters(), words: WC.blankRows() };
   }
 
   function loadExample(key) {
-    return fetch(layoutsUrl + key + '-layout.json').then(function (r) {
-      if (!r.ok) throw new Error('The ' + key + ' grid could not be loaded.');
-      return r.json();
-    }).then(function (data) {
+    return WC.loadLayout(layoutsUrl, key).then(function (data) {
       var d = importDesign(data);
       d.name = '';
       return d;
@@ -96,34 +79,14 @@
 
   /* ---------- import and export ---------- */
 
-  // Accepts this designer's files: format 2, and format 1 from before the
-  // 24-letter limit (37 rows of 12, with an optional next_hour_from minute).
+  // A design file: the grid (see WordClock.readLayout) plus the customer's
+  // details and the layout revision.
   function importDesign(data) {
-    if (!data || !Array.isArray(data.words) || (data.words.length !== ROWS && data.words.length !== 37)) {
-      throw new Error('This is not a word clock design file.');
-    }
-    var d = emptyDesign();
-    d.name = typeof data.name === 'string' ? data.name : '';
+    var d = WC.readLayout(data);
     d.customer = typeof data.customer_name === 'string' ? data.customer_name : '';
     d.order = typeof data.order_number === 'string' ? data.order_number : '';
     d.email = typeof data.customer_email === 'string' ? data.customer_email : '';
     d.layoutRevision = typeof data.layout_revision === 'number' && data.layout_revision > 0 ? data.layout_revision : 1;
-    if (Array.isArray(data.next_hour) && data.next_hour.length === 12) {
-      d.nextHour = data.next_hour.map(Boolean);
-    } else {
-      var from = data.next_hour_from === undefined ? 20 : data.next_hour_from;
-      d.nextHour = nextHourFrom(from === null ? 12 : Math.ceil(from / 5));
-    }
-    if (Array.isArray(data.letters) && data.letters.length === SIZE) {
-      d.letters = data.letters.map(function (row) {
-        var a = (typeof row === 'string' ? Array.from(row) : row).map(cleanLetter);
-        while (a.length < SIZE) a.push('');
-        return a.slice(0, SIZE);
-      });
-    }
-    data.words.forEach(function (w, r) {
-      if (r < ROWS) d.words[r] = w.filter(function (l) { return l >= 0 && l < LEDS; }).slice(0, MAX_PER_WORD);
-    });
     return d;
   }
 
@@ -208,48 +171,10 @@
   var root, gridEl;
 
   /* ---------- clock logic (same rules as the firmware) ---------- */
-  function rowsFor(hour, minute) {
-    var phrase = Math.floor(minute / 5);
-    var shown = (hour + (design.nextHour[phrase] ? 1 : 0)) % 12;
-    var hourRow = phrase === 0 && design.words[37 + shown].length ? 37 + shown : 13 + shown;
-    return [0, 1 + phrase, hourRow];
-  }
-
-  function litLeds(hour, minute, day) {
-    var lit = new Set();
-    rowsFor(hour, minute).concat([25 + day, 32 + (minute % 5)]).forEach(function (r) {
-      design.words[r].forEach(function (l) { lit.add(l); });
-    });
-    return lit;
-  }
-
-  function sortedByPosition(leds) {
-    return leds.slice().sort(function (a, b) {
-      var pa = pos(a), pb = pos(b);
-      return pa.row - pb.row || pa.col - pb.col;
-    });
-  }
-
-  // Letters in reading order, with a space wherever they aren't next to each
-  // other.
-  function wordText(leds) {
-    var text = '', prev = null;
-    sortedByPosition(leds).forEach(function (l) {
-      var p = pos(l);
-      if (prev && (p.row !== prev.row || p.col !== prev.col + 1)) text += ' ';
-      text += design.letters[p.row][p.col] || '?';
-      prev = p;
-    });
-    return text;
-  }
-
-  function timeText(hour, minute) {
-    var leds = [];
-    rowsFor(hour, minute).forEach(function (r) { leds = leds.concat(design.words[r]); });
-    var text = wordText(leds.filter(function (l, i) { return leds.indexOf(l) === i; }));
-    var dots = minute % 5;
-    return (text || '(no words lit)') + (dots ? '  + ' + dots + ' dot' + (dots > 1 ? 's' : '') : '');
-  }
+  function rowsFor(hour, minute) { return WC.rowsFor(design, hour, minute); }
+  function litLeds(hour, minute, day) { return WC.litLeds(design, hour, minute, day); }
+  function wordText(leds) { return WC.wordText(design, leds); }
+  function timeText(hour, minute) { return WC.timeText(design, hour, minute); }
 
   /* ---------- rendering ---------- */
   function $(sel) { return root.querySelector(sel); }

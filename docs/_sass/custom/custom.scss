@@ -175,79 +175,54 @@ figure.highlight {
   border-radius: 8px;
 }
 
-// Language tabs on the home page (radio buttons, no JavaScript).
-.lang-tabs {
-  margin: 1.5rem 0;
+// Live clock on the home page (index.md, assets/js/home-clock.js); the clock
+// face uses the designer's .wcd-grid / .wcd-cell styles.
+.wcl {
+  .wcl-langs { margin-bottom: 0.75rem; }
+  .wcd-chip { min-width: 3rem; }
+  .wcl-grid { margin-bottom: 0.75rem; }
+  .wcl-says { margin: 0 0 0.25rem; }
+  .wcl-explain { margin-top: 0; font-size: 0.9rem; color: $nav-child-link-color; }
 
-  > input {
-    position: absolute;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .tab-bar {
+  .wcl-colour {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    border-bottom: 1px solid $border-color;
-    margin-bottom: 1.25rem;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    color: $nav-child-link-color;
 
-    label {
+    input[type="color"] {
+      width: 2.25rem;
+      height: 1.75rem;
+      padding: 0;
+      border: 1px solid $border-color;
+      border-radius: 6px;
+      background: none;
       cursor: pointer;
-      padding: 0.5rem 1rem;
-      margin-bottom: -1px;
-      border: 1px solid transparent;
-      border-radius: 8px 8px 0 0;
-      font-weight: 500;
-      color: $nav-child-link-color;
-
-      &:hover {
-        color: $link-color;
-      }
     }
   }
 
-  .tab-panel {
-    display: none;
+  .wcl-link {
+    padding: 0;
+    font: inherit;
+    color: $link-color;
+    background: none;
+    border: 0;
+    cursor: pointer;
   }
 
-  // One entry per language tab on the home page (tab-xx / panel-xx).
-  @each $lang in en, de, fr, nl, ko {
-    #tab-#{$lang}:checked ~ #panel-#{$lang} {
-      display: block;
-    }
-
-    #tab-#{$lang}:checked ~ .tab-bar label[for="tab-#{$lang}"] {
-      color: $body-heading-color;
-      background-color: $body-background-color;
-      border-color: $border-color $border-color $body-background-color;
-    }
-
-    #tab-#{$lang}:focus-visible ~ .tab-bar label[for="tab-#{$lang}"] {
-      outline: 2px solid $link-color;
-    }
+  // The chosen illustration colour (home-clock.js sets --wcl-lit / --wcl-glow).
+  // "&.wcd" outranks the designer's own .wcd .wcd-cell.is-lit, which comes
+  // later in the stylesheet.
+  &.wcd .wcd-cell.is-lit {
+    color: var(--wcl-lit, #fff);
+    text-shadow: 0 0 8px var(--wcl-glow, rgba(255, 255, 255, 0.7));
   }
-}
 
-.main-content .grid-image {
-  display: block;
-  width: 100%;
-  max-width: 420px;
-}
-
-// Stand-in until a photo of the letter grid is available.
-.image-placeholder {
-  aspect-ratio: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  border: 2px dashed $border-color;
-  border-radius: 8px;
-  background-color: $sidebar-color;
-  color: $nav-child-link-color;
+  &.wcd .wcd-cell.is-dot.is-lit::before {
+    box-shadow: 0 0 8px var(--wcl-glow, rgba(255, 255, 255, 0.7));
+  }
 }
 
 // Letter grid designer (design-your-own.md, assets/js/designer.js).

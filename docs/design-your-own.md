@@ -167,6 +167,7 @@ while you design.
   </div>
 </div>
 
+<script src="{{ '/assets/js/wordclock.js' | relative_url }}" defer></script>
 <script src="{{ '/assets/js/designer.js' | relative_url }}" defer></script>
 
 ## Help
