@@ -25,7 +25,7 @@ of letters shows the day of the week. The words depend on the language of the
 letter grid.
 
 The five grids below are just examples. Letter grids are also available in
-Español, Português, Italiano, Frysk, Svenska, Norsk, Dansk, 日本語 and 中文,
+Español, Português, Italiano, Frysk, Svenska, Norsk, Dansk, Türkçe, 日本語 and 中文,
 and you can [design your own letter grid](design-your-own.html), starting
 from any of them or from an empty grid, so your clock can speak any language.
 

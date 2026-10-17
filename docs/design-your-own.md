@@ -40,6 +40,7 @@ while you design.
           <button type="button" class="wcd-card" data-example="swedish" lang="sv"><strong>Svenska</strong><span>KLOCKAN ÄR TJUGO ÖVER FYRA</span></button>
           <button type="button" class="wcd-card" data-example="norwegian" lang="nb"><strong>Norsk</strong><span>KLOKKEN ER TI PÅ HALV FEM</span></button>
           <button type="button" class="wcd-card" data-example="danish" lang="da"><strong>Dansk</strong><span>KLOKKEN ER TYVE OVER FIRE</span></button>
+          <button type="button" class="wcd-card" data-example="turkish" lang="tr"><strong>Türkçe</strong><span>SAAT DÖRT YİRMİ</span></button>
           <button type="button" class="wcd-card" data-example="korean" lang="ko"><strong>한국어</strong><span>지금은 네 시 이십 분입니다</span></button>
           <button type="button" class="wcd-card" data-example="japanese" lang="ja"><strong>日本語</strong><span>今は四時二十分です</span></button>
           <button type="button" class="wcd-card" data-example="chinese" lang="zh"><strong>中文</strong><span>现在是四点二十分</span></button>
@@ -80,7 +81,7 @@ while you design.
           <option value="25">From x:25: German, Swedish, Danish (4:25 = fünf vor halb fünf)</option>
           <option value="20">From x:20: Dutch, Frisian, Norwegian (4:20 = tien voor half vijf)</option>
           <option value="15">From x:15: East German (4:15 = viertel fünf)</option>
-          <option value="never">Never: Korean, Japanese, Chinese (4:40 = 네 시 사십 분)</option>
+          <option value="never">Never: Korean, Japanese, Chinese, Turkish (4:40 = 네 시 사십 분, saat dört kırk)</option>
           <option value="custom" disabled>Your own choice (ticked per phrase below)</option>
         </select>
         <p class="wcd-muted" id="wcd-words-hint"></p>
@@ -166,8 +167,8 @@ while you design.
 At 4:35 English says "twenty-five to **five**": the phrase is about the
 *coming* hour. Languages switch at different moments: Dutch, Frisian and Norwegian already
 at 4:20 ("tien voor half **vijf**"), German, Swedish and Danish at 4:25,
-English and the Romance languages at 4:35, and Korean, Japanese and Chinese
-never. In step 3, choose your language from the list and this is set
+English and the Romance languages at 4:35, and Korean, Japanese, Chinese and
+Turkish (which the Türkçe grid reads digitally: "saat dört kırk") never. In step 3, choose your language from the list and this is set
 for you. For a different way of saying the time, tick **next hour** for each
 minute phrase that names the coming hour.
 
