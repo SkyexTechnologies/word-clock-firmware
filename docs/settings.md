@@ -63,10 +63,10 @@ it jump.
 ## Time zones
 
 The available regions are UTC, Amsterdam, London, New York, Chicago, Denver,
-Los Angeles, Seoul and Sydney. Choose the one with the same time and daylight
-saving rules as where you live.
-
-![The 06. Time Zone list on the clock's web page]({{ '/images/web-time-zone.png' | relative_url }}){: .screenshot-narrow }
+Los Angeles, Seoul / Tokyo, Sydney, Istanbul, Beijing / Taipei, São Paulo and
+Mexico City. Choose the one with the same time and daylight saving rules as
+where you live: Amsterdam also fits Berlin, Paris, Madrid, Rome and
+Scandinavia, and London also fits Lisbon and Dublin.
 
 ## Information
 
