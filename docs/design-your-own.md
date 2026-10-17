@@ -11,7 +11,7 @@ words, or with a name or message hidden among the letters. The designer
 below takes you through it in five steps. Your work is kept in this browser
 while you design.
 
-<div id="wcd" class="wcd">
+<div id="wcd" class="wcd" data-layouts="{{ '/layouts/' | relative_url }}">
   <ol class="wcd-steps">
     <li><button type="button" class="wcd-step" data-step="start"><span>1</span> Start</button></li>
     <li><button type="button" class="wcd-step" data-step="letters"><span>2</span> Letters</button></li>
