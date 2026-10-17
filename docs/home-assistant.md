@@ -56,10 +56,6 @@ This changes which squares light up; the letters on the clock stay the same.
 
 The clock's *Hardware* information then shows the new layout revision.
 
-{: .note }
-> Send us the corrected design file as well, so we have your current layout if
-> your clock ever needs service.
-
 ## Removing the clock or giving it away
 
 Remove the clock from Home Assistant within 15 minutes after plugging it in,

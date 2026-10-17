@@ -18,8 +18,8 @@
   'use strict';
 
   var SIZE = 11, LEDS = 121, MAX_PER_WORD = 24, ROWS = 49, STORAGE_KEY = 'word-clock-design';
-  // Address the "Email your design" button writes to; empty until decided.
-  var ORDER_EMAIL = '';
+  // Address the "Email your design" button writes to (also shown in step 5).
+  var ORDER_EMAIL = 'skyex.technologies@gmail.com';
   // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
   var DOT = '.';
   var APOSTROPHES = ["'", '’'];

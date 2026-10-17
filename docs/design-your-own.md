@@ -115,7 +115,12 @@ while you design.
 
       <div class="wcd-panel" data-step="send" hidden>
         <h3 class="wcd-title">5. Send your design</h3>
-        <p>All three fields are required.</p>
+        <div class="wcd-attach" role="note">
+          <strong>Use the details from your order.</strong> Fill in the same name
+          and email address you used when ordering your clock, and its order
+          number. If the order number doesn't match an order, your clock won't go
+          into production. All three fields are required.
+        </div>
         <label class="wcd-label" for="wcd-customer">Your name</label>
         <input type="text" id="wcd-customer" class="wcd-input" autocomplete="name" required aria-required="true">
         <label class="wcd-label" for="wcd-email-address">Your email address</label>
@@ -133,8 +138,11 @@ while you design.
         <div class="wcd-attach" role="note">
           <strong>Attach your design to the email.</strong> Your design is not added
           to the email automatically. "Email your design" first saves it as a file
-          (in your Downloads folder) and then opens an email: attach that file
-          before you send it, otherwise we can't make your clock.
+          (in your Downloads folder) and then opens an email to
+          <a href="mailto:skyex.technologies@gmail.com">skyex.technologies@gmail.com</a>:
+          attach that file before you send it, otherwise we can't make your clock.
+          If no email opens, send the file to that address yourself and mention
+          your name and order number in the email.
         </div>
         <div class="wcd-buttons">
           <button type="button" class="btn btn-primary" id="wcd-email" disabled>Email your design</button>
