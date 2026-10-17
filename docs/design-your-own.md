@@ -155,7 +155,7 @@ while you design.
           <p>This changes which squares light up for each word. The letters on your
           clock stay the same, so use it only to fix a word that lights the wrong
           squares, a missing letter or the hour rule. Your clock must be added to
-          Home Assistant; see <a href="home-assistant.html#changing-your-layout">Changing your layout</a>.</p>
+          Home Assistant; see <a href="troubleshooting.html#changing-your-layout">Changing your layout</a>.</p>
           <button type="button" class="btn" id="wcd-ha-copy">Copy for Home Assistant</button>
           <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
         </details>

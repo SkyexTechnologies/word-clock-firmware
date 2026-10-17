@@ -46,29 +46,6 @@ Home Assistant sends the clock the time and its time zone. Home Assistant
 2026.3 or newer is needed for the time zone. With an older version, choose the
 time zone on the clock under **06. Time Zone**.
 
-## Changing your layout
-
-Did a word on your clock light the wrong squares, or does it name the wrong
-hour? You can send a corrected layout to your clock through Home Assistant.
-This changes which squares light up; the letters on the clock stay the same.
-
-1. Open your design in the [designer](design-your-own.html): in step 1, choose
-   **Open it** and select the design file you sent us. Make your correction.
-2. In step 5, open **Already have your clock? Apply a corrected design through
-   Home Assistant** and click **Copy for Home Assistant**.
-3. In Home Assistant, go to **Settings → Developer tools → Actions** and switch
-   to **YAML mode**. Paste the text.
-4. Replace `xxxxxx` in the first line with the six characters of your clock's
-   name (as in `word-clock-xxxxxx.local`). It then looks like this:
-
-   ![The Actions screen in Home Assistant in YAML mode, with the set_word_layout action pasted]({{ '/images/ha-actions.png' | relative_url }}){: .screenshot-wide }
-5. Click **Perform action**, then restart the clock with **Restart Word Clock**.
-
-The clock's *Hardware* information then shows the new layout revision, here
-layout 9:
-
-![The Diagnostic card in Home Assistant, with Hardware showing Revision 1, layout 9]({{ '/images/ha-diagnostic.png' | relative_url }}){: .screenshot-narrow }
-
 ## Removing the clock or giving it away
 
 Remove the clock from Home Assistant within 15 minutes after plugging it in,
