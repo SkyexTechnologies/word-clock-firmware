@@ -22,6 +22,13 @@ are saved on the clock and kept after a power cut.
 
 Indications that your clock doesn't have are not shown.
 
+![The settings on the clock's web page: 01. Word Clock to Indication: Week Days]({{ '/images/web-controls.png' | relative_url }}){: .screenshot }
+
+In Home Assistant the same settings appear under **Controls** on the clock's
+device page:
+
+![The clock's controls in Home Assistant]({{ '/images/ha-controls.png' | relative_url }}){: .screenshot-narrow }
+
 ## Setting up automatic brightness
 
 With **03. Automatic Brightness** on, the clock adjusts its brightness to the
@@ -59,9 +66,13 @@ The available regions are UTC, Amsterdam, London, New York, Chicago, Denver,
 Los Angeles, Seoul and Sydney. Choose the one with the same time and daylight
 saving rules as where you live.
 
+![The 06. Time Zone list on the clock's web page]({{ '/images/web-time-zone.png' | relative_url }}){: .screenshot-narrow }
+
 ## Information
 
 | Item | What it shows |
 | --- | --- |
 | **Firmware Update** | The installed version and whether an update is available. See [Updating the firmware](updating.html). |
-| **Hardware** | The hardware revision of your clock and which indications it has. |
+| **Hardware** | The hardware revision of your clock, the version of its layout and which indications it has. |
+
+![Firmware Update, Hardware and Layout Provisioned on the clock's web page]({{ '/images/web-diagnostic.png' | relative_url }}){: .screenshot }

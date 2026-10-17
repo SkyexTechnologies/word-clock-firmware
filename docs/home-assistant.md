@@ -22,15 +22,23 @@ which is built into Home Assistant.
 
 1. Make sure the clock is [connected to your Wi-Fi](getting-started.html).
 2. Home Assistant usually finds the clock by itself. Go to **Settings →
-   Devices & services**; the Word Clock appears under *Discovered*. Click
-   **Add**.
+   Devices & services**; the Word Clock appears under *Discovered* as
+   `word-clock-xxxxxx`. Click **Add**.
+
+   ![A discovered word clock with an Add button in Home Assistant]({{ '/images/ha-discovered.png' | relative_url }}){: .screenshot }
 3. If it doesn't appear, click **Add integration**, choose **ESPHome** and
    enter `word-clock-xxxxxx.local` (see [Getting started](getting-started.html#3-open-the-clocks-web-page))
    or the clock's IP address.
 
 When it adds the clock, Home Assistant gives it its own encryption key. From
 then on only your Home Assistant can control the clock over the network. The
-web page keeps working.
+web page keeps working. Does Home Assistant ask *you* for an encryption key? See
+[Troubleshooting](troubleshooting.html#home-assistant-asks-for-an-encryption-key).
+
+The clock then has its own device page with all its settings (see
+[Settings](settings.html)):
+
+![The clock's controls in Home Assistant]({{ '/images/ha-controls.png' | relative_url }}){: .screenshot-narrow }
 
 ## Time and time zone
 
@@ -51,10 +59,15 @@ This changes which squares light up; the letters on the clock stay the same.
 3. In Home Assistant, go to **Settings → Developer tools → Actions** and switch
    to **YAML mode**. Paste the text.
 4. Replace `xxxxxx` in the first line with the six characters of your clock's
-   name (as in `word-clock-xxxxxx.local`).
+   name (as in `word-clock-xxxxxx.local`). It then looks like this:
+
+   ![The Actions screen in Home Assistant in YAML mode, with the set_word_layout action pasted]({{ '/images/ha-actions.png' | relative_url }}){: .screenshot-wide }
 5. Click **Perform action**, then restart the clock with **Restart Word Clock**.
 
-The clock's *Hardware* information then shows the new layout revision.
+The clock's *Hardware* information then shows the new layout revision, here
+layout 9:
+
+![The Diagnostic card in Home Assistant, with Hardware showing Revision 1, layout 9]({{ '/images/ha-diagnostic.png' | relative_url }}){: .screenshot-narrow }
 
 ## Removing the clock or giving it away
 

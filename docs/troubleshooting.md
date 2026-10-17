@@ -32,6 +32,32 @@ encryption key. The clock then starts its setup hotspot again; see
 The hotspot and Home Assistant setup are only possible for 15 minutes after
 the clock is plugged in. Unplug the clock and plug it in again.
 
+## Home Assistant asks for an encryption key
+
+Normally you never need to enter a key: when you add the clock, Home Assistant
+gives it a key of its own. Home Assistant only asks for one when it can't do
+that. Try these steps in order:
+
+1. **Unplug the clock and plug it in again**, then add it in Home Assistant
+   within 15 minutes. A clock only accepts a new key during the first 15
+   minutes after it is plugged in, so after that Home Assistant can't set one.
+2. **If it still asks**, the clock still has a key that Home Assistant no
+   longer knows. This happens when the clock was added to another Home
+   Assistant (a previous owner's, or yours before a reinstall), or when it was
+   removed from Home Assistant more than 15 minutes after it was plugged in:
+   the clock then keeps its key. A restart doesn't clear it. Do a
+   [factory reset](#factory-reset): hold the button for 10 to 20 seconds. This
+   removes the key, but also the Wi-Fi settings and your settings (not the
+   words of your clock). Connect the clock to Wi-Fi again (see
+   [Getting started](getting-started.html)), and add it in Home Assistant
+   within 15 minutes after plugging it in.
+
+To remove a clock from Home Assistant and keep it ready to add again, unplug
+and replug the clock first, then remove it within 15 minutes: that clears its
+key too.
+
+We can't give you a clock's key: only the Home Assistant that set it knows it.
+
 ## The time is off by one or more hours
 
 Check **06. Time Zone** under [Settings](settings.html). Without Home

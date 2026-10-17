@@ -45,6 +45,8 @@ If that address doesn't open (some older phones and computers don't support
 devices, where it appears as `word-clock-xxxxxx`, and open `http://<ip-address>`
 instead. Add a bookmark, so you can find it again later.
 
+![The clock's web page with its settings, update buttons and information]({{ '/images/web-page.png' | relative_url }}){: .screenshot }
+
 The clock uses Amsterdam time unless Home Assistant sets another time zone.
 Live elsewhere? Choose your region under **06. Time Zone**. See
 [Settings](settings.html) for what each setting does.

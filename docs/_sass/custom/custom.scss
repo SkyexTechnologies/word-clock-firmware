@@ -639,3 +639,16 @@ figure.highlight {
 
   .wcd-flash { min-height: 1.5em; margin-top: 0.75rem; color: $link-color; }
 }
+
+// Screenshots of the clock's web page and Home Assistant.
+.main-content .screenshot,
+.main-content .screenshot-narrow,
+.main-content .screenshot-wide {
+  display: block;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+}
+
+.main-content .screenshot { max-width: 560px; }
+.main-content .screenshot-narrow { max-width: 360px; }
+.main-content .screenshot-wide { max-width: 100%; }

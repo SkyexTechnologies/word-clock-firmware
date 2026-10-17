@@ -18,10 +18,15 @@ by itself: you decide when.
    checks it, installs it and restarts. This takes about a minute; don't
    unplug it in the meantime.
 
+![Check for Firmware Update, Firmware status and Install Firmware Update on the clock's web page]({{ '/images/web-configuration.png' | relative_url }}){: .screenshot }
+
 ## From Home Assistant
 
 The update appears under **Settings → Updates**, like other updates. Click
-**Install**.
+**Install**. The clock's device page also has the update status and the same
+buttons under **Configuration**:
+
+![The clock's Configuration card in Home Assistant with the firmware status and buttons]({{ '/images/ha-configuration.png' | relative_url }}){: .screenshot-narrow }
 
 Your settings and Wi-Fi are kept after an update, unless the release notes
 say otherwise.
