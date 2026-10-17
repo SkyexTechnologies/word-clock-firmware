@@ -261,7 +261,8 @@
 
   function render() {
     var lit = new Set(), inPhrase = new Set(), used = new Set();
-    if (step === 'start') lit = litLeds(9, 47, 3);
+    var now = new Date();
+    if (step === 'start') lit = litLeds(now.getHours(), now.getMinutes(), now.getDay());
     if (step === 'check') {
       var t = previewTime();
       lit = litLeds(t.hour, t.minute, currentDay);
@@ -286,7 +287,10 @@
       }
       if (step === 'letters' && selectedCell === l) cell.classList.add('is-selected');
     });
-    if (step === 'start') $('#wcd-start-shows').textContent = timeText(9, 47);
+    if (step === 'start') {
+      $('#wcd-start-time').textContent = clock(now.getHours(), now.getMinutes());
+      $('#wcd-start-shows').textContent = timeText(now.getHours(), now.getMinutes());
+    }
     if (step === 'words') renderPhraseList();
     if (step === 'check') { $('#wcd-phrase').textContent = timeText(previewTime().hour, previewTime().minute); renderCheck('#wcd-check'); }
     if (step === 'send') {
@@ -760,6 +764,8 @@
 
     syncRule();
     setStep('start');
+    // Step 1 shows the current time; follow the clock while it's open.
+    setInterval(function () { if (step === 'start') render(); }, 10000);
     // First visit: start with the English example grid.
     if (!stored) {
       loadExample('english').then(function (next) {

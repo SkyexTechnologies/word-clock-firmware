@@ -46,7 +46,7 @@ while you design.
           <button type="button" class="wcd-card" data-example="chinese" lang="zh"><strong>中文</strong><span>现在是四点二十分</span></button>
           <button type="button" class="wcd-card wcd-card-empty" data-example="empty"><strong>Empty grid</strong><span>Start from scratch</span></button>
         </div>
-        <p class="wcd-muted">At 9:47 on a Wednesday this grid shows: <strong id="wcd-start-shows"></strong></p>
+        <p class="wcd-muted">Right now (<span id="wcd-start-time"></span>) this grid shows: <strong id="wcd-start-shows"></strong></p>
         <p class="wcd-muted">Saved a design before? <button type="button" class="wcd-link" id="wcd-open">Open it</button>.
         <input type="file" id="wcd-file" accept=".json,application/json" hidden></p>
         <div class="wcd-nav"><span></span><button type="button" class="btn btn-primary" data-go="next">Next: letters</button></div>
