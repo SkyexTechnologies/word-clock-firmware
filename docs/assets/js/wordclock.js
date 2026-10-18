@@ -55,6 +55,12 @@
     ['✓', 'Check mark'], ['✦', 'Sparkle'], ['♣', 'Clover'], ['✚', 'Cross']
   ];
 
+  // A symbol with the text presentation mark (U+FE0E), so phones draw it in
+  // the font instead of as a colour emoji; other characters unchanged.
+  function textStyle(c) {
+    return SYMBOLS.some(function (s) { return s[0] === c; }) ? c + '\uFE0E' : c;
+  }
+
   // A character a user may type in a square: a letter of any script, a
   // number, an accent, punctuation, a character from a normal keyboard
   // (! & - and the like, a space for an empty square) or one of SYMBOLS.
@@ -184,7 +190,7 @@
   // O lines up with the letters above and below. A "." is drawn by CSS.
   function fillCell(el, ch) {
     var chars = Array.from(ch === DOT ? '' : ch);
-    el.textContent = chars[0] || '';
+    el.textContent = textStyle(chars[0] || '');
     if (chars.length > 1) {
       var accent = document.createElement('span');
       accent.className = 'wcd-accent';
@@ -204,7 +210,7 @@
     SIZE: SIZE, LEDS: LEDS, MAX_PER_WORD: MAX_PER_WORD, ROWS: ROWS, DOT: DOT,
     LETTER_SIZES: LETTER_SIZES, DEFAULT_LETTER_SIZE: DEFAULT_LETTER_SIZE,
     led: led, pos: pos, cleanLetter: cleanLetter, stripEmojiMarks: stripEmojiMarks,
-    SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, blankRows: blankRows, blankLetters: blankLetters,
+    SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, textStyle: textStyle, blankRows: blankRows, blankLetters: blankLetters,
     nextHourFrom: nextHourFrom, readLayout: readLayout, loadLayout: loadLayout,
     rowsFor: rowsFor, litLeds: litLeds, wordText: wordText, timeText: timeText, minuteDots: minuteDots,
     fillCell: fillCell, sizeLetters: sizeLetters

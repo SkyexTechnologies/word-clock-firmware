@@ -33,7 +33,7 @@
   // from its middle (word_clock_config.yaml in word-clock-dxf-generator).
   var PLATE_MM = 300, OUTER_CENTRE_MM = 116;
   // The front plate's font (word-clock-dxf-generator), as in .wcd-cell.
-  var PLATE_FONT = '"Arial Unicode MS", Arial, "Helvetica Neue", Helvetica, sans-serif';
+  var PLATE_FONT = '"Arial Unicode MS", Arial, "Word Clock Symbols", "Helvetica Neue", Helvetica, sans-serif';
   // Warn when two neighbouring letters come closer than this on the plate.
   var CLEARANCE_MM = 1;
 
@@ -758,7 +758,7 @@
       b.type = 'button';
       b.className = 'wcd-chip';
       b.dataset.symbol = s[0];
-      b.textContent = s[0];
+      b.textContent = WC.textStyle(s[0]);
       b.setAttribute('aria-label', s[1]);
       symbols.appendChild(b);
     });

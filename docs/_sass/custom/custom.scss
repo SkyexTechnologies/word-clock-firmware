@@ -3,6 +3,23 @@ html {
   font-size: 1rem !important;
 }
 
+// The designer's symbols (WordClock.SYMBOLS) for devices without the plate
+// font Arial Unicode MS, such as iPhones, which would otherwise show them as
+// colour emoji. Only these ten glyphs, from Noto Sans Symbols and Noto Sans
+// Symbols 2 (SIL Open Font License, assets/fonts/Noto-Symbols-OFL.txt).
+@font-face {
+  font-family: "Word Clock Symbols";
+  font-display: block;
+  src: url("../fonts/symbols-1.woff") format("woff");
+  unicode-range: U+263B, U+266A;
+}
+@font-face {
+  font-family: "Word Clock Symbols";
+  font-display: block;
+  src: url("../fonts/symbols-2.woff") format("woff");
+  unicode-range: U+2605, U+2663, U+2708, U+2713, U+2726, U+273F, U+271A, U+2764;
+}
+
 // Inter, served from this site (assets/fonts, SIL Open Font License) rather
 // than Google Fonts, so pages make no requests to third parties.
 @font-face {
@@ -375,7 +392,7 @@ figure.highlight {
   // The font of the front plates (Arial Unicode MS, word-clock-dxf-generator),
   // as installed on the visitor's device; it is never downloaded. Regular
   // only: the plate font has no bold.
-  $wcd-plate-font: "Arial Unicode MS", Arial, "Helvetica Neue", Helvetica, sans-serif;
+  $wcd-plate-font: "Arial Unicode MS", Arial, "Word Clock Symbols", "Helvetica Neue", Helvetica, sans-serif;
 
   .wcd-cell {
     display: flex;
