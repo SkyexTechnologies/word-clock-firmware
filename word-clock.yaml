@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.6.0"
+  project_version: "1.6.1"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -99,6 +99,13 @@ logger:
     # at INFO, Improv serial at DEBUG); keep those lines out of the logs.
     captive_portal: WARN
     improv_serial: INFO
+    # "<component> took a long time for an operation": shown each time the web
+    # page opens (the web server sends every entity at once, about 1 s on the
+    # ESP8266). Harmless; errors from this tag still show.
+    component: ERROR
+    # "Window expired; cycle power to reopen window" after 15 minutes on every
+    # clock without Home Assistant; on_timeout logs it as information below.
+    provisioning: ERROR
 
 api:
   # Every clock ships without a key. Home Assistant sets a per-clock key when
@@ -141,8 +148,8 @@ provisioning:
   timeout: 15min
   on_timeout:
     - logger.log:
-        level: WARN
-        format: "Setup window closed; restart the clock to set it up again"
+        level: INFO
+        format: "Setup window closed; unplug the clock and plug it back in to connect Home Assistant"
 
 http_request:
   # ESPHome cannot verify HTTPS certificates on the ESP8266; downloads are
