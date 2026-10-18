@@ -23,7 +23,7 @@ concurrency:
 jobs:
   prepare:
     name: Read release notes
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     outputs:
       summary: ${{ steps.notes.outputs.summary }}
       url: ${{ steps.notes.outputs.url }}
@@ -58,7 +58,7 @@ jobs:
     name: Create draft release
     needs: build
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Check out
         uses: actions/checkout@v7
@@ -83,7 +83,7 @@ jobs:
     name: Publish pre-release
     needs: upload
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Turn the draft into a pre-release
         env:
