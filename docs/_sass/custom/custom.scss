@@ -1,3 +1,8 @@
+// The theme shrinks all text to 14 px on narrow screens; keep 16 px on phones.
+html {
+  font-size: 1rem !important;
+}
+
 // Inter, served from this site (assets/fonts, SIL Open Font License) rather
 // than Google Fonts, so pages make no requests to third parties.
 @font-face {
@@ -361,6 +366,8 @@ figure.highlight {
     padding: 10px;
     background: #0b0b0d;
     border-radius: 10px;
+    // Lets the letters scale with the clock face (cqi units below).
+    container-type: inline-size;
   }
 
   .wcd-cell {
@@ -376,6 +383,8 @@ figure.highlight {
     color: #3a3b40;
     font: inherit;
     font-size: clamp(0.7rem, 2.6vw, 1.05rem);
+    // About half a square, at any size of the clock face (phone or computer).
+    font-size: 4.3cqi;
     font-weight: 600;
     cursor: default;
     transition: color 0.15s, background-color 0.15s, text-shadow 0.15s;
