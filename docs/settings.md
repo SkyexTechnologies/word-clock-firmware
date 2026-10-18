@@ -10,10 +10,10 @@ are saved on the clock and kept after a power cut.
 
 | Setting | What it does |
 | --- | --- |
-| **01. Word Clock** | Switch the clock on or off, and set its colour and brightness. |
+| **01. Word Clock** | Switch the clock on or off, and set its colour and brightness (at least 20%). |
 | **02. Transition** | How long the fade between two times takes, from 0 to 10 seconds. |
 | **03. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
-| **04. Minimum Brightness** / **05. Maximum Brightness** | The range used by automatic brightness. |
+| **04. Minimum Brightness** / **05. Maximum Brightness** | The range used by automatic brightness, from 0.2 (20%) to 1 (100%). |
 | **06. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
 | **Indication: It is** | Show or hide the opening words, such as "IT IS". |
 | **Indication: Minutes** | Show or hide the four minute dots. |
@@ -52,6 +52,8 @@ brightness over about 10 seconds, so a light switched on or off doesn't make
 it jump.
 
 {: .note }
+> - The clock never goes below 20% brightness. Dimmer than that, the LEDs
+>   can't show colours accurately anymore: orange, for example, would turn red.
 > - Too bright at night? Lower **04. Minimum Brightness**. Too dim during the
 >   day? Raise **05. Maximum Brightness**.
 > - The maximum can't be lower than the minimum: if you set one past the

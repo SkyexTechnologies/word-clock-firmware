@@ -2,12 +2,16 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.3.0"
+  project_version: "1.4.0"
   # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this URL built in: never rename that
   # account or repository, GitHub Pages doesn't redirect.
   update_manifest_url: "https://skyextechnologies.github.io/word-clock-firmware/firmware/word-clock.manifest.json"
+  # Lowest brightness (0-1), for automatic and manual brightness alike. Below
+  # about 20 % the LEDs' 8-bit channels (after gamma correction) round the
+  # weaker colour channels to 0, so mixed colours shift (orange turns red).
+  brightness_floor: "0.2"
 
 esphome:
   name: "${name}"
@@ -40,11 +44,18 @@ esphome:
       then:
         # Turn on with the Clock effect in one call: the effect is dropped while
         # the light restores switched off, and turning on without it first shows
-        # all LEDs in the light's colour. With the effect active, the default
-        # transition only fades the brightness of what the effect draws.
+        # all LEDs in the light's colour. (ESPHome allows no transition
+        # together with an effect: it comes on at once.)
         - light.turn_on:
             id: word_clock
             effect: Clock
+        # Brightness settings saved before the floor existed may be below it.
+        - lambda: |-
+            const float floor_b = ${brightness_floor};
+            if (id(minimum_brightness).state < floor_b)
+              id(minimum_brightness).make_call().set_value(floor_b).perform();
+            if (id(maximum_brightness).state < floor_b)
+              id(maximum_brightness).make_call().set_value(floor_b).perform();
         # Without a layout this sets full brightness for the colour test.
         - script.execute:
             id: set_light_brightness
@@ -411,15 +422,16 @@ script:
                   // script when they restore): leave the brightness alone.
                   return;
                 } else {
-                  float min_brightness = id(minimum_brightness).state;
-                  float max_brightness = id(maximum_brightness).state;
+                  const float floor_b = ${brightness_floor};
+                  float min_brightness = std::max(id(minimum_brightness).state, floor_b);
+                  float max_brightness = std::max(id(maximum_brightness).state, min_brightness);
                   brightness = (max_brightness - min_brightness) * id(light_sensor).state + min_brightness;
                 }
                 // Not saved: the sensor adjusts brightness every 15 s, and
                 // saving each change would wear out the settings flash sector.
                 // Only changes made by the user are restored after a reboot.
                 id(word_clock).make_call()
-                    .set_brightness(clamp(brightness, 0.0f, 1.0f))
+                    .set_brightness(clamp(brightness, (float) ${brightness_floor}, 1.0f))
                     .set_transition_length(quick_transition ? 500 : 10000)
                     .set_save(false)
                     .perform();
@@ -438,7 +450,7 @@ number:
     name: "04. Minimum Brightness"
     id: minimum_brightness
     optimistic: True
-    min_value: 0.01
+    min_value: ${brightness_floor}
     max_value: 1
     step: 0.01
     restore_value: True
@@ -458,7 +470,7 @@ number:
     name: "05. Maximum Brightness"
     id: maximum_brightness
     optimistic: True
-    min_value: 0.01
+    min_value: ${brightness_floor}
     max_value: 1
     initial_value: 1
     step: 0.01
@@ -533,7 +545,9 @@ light:
     num_leds: 121
     name: "01. Word Clock"
     id: word_clock
-    default_transition_length: 10s
+    # Changes made by hand (brightness, colour, on) apply at once. Automatic
+    # brightness sets its own fades (set_light_brightness).
+    default_transition_length: 0s
     icon: "mdi:file-word-box-outline"
     # The light saves its own colour, brightness and effect; automatic
     # brightness is not saved (see set_light_brightness). RESTORE_AND_OFF keeps
@@ -557,9 +571,22 @@ light:
               - light.control:
                   id: word_clock
                   effect: Clock
-        # Switch off at once instead of fading out over the default 10 s
-        # transition (switching on keeps it). on_turn_off only fires after
-        # the fade has finished, so react to the requested state here.
+        # Never below the brightness floor, also when the brightness is set by
+        # hand on the web page or in Home Assistant.
+        - if:
+            condition:
+              lambda: |-
+                return id(word_clock).remote_values.is_on() &&
+                       id(word_clock).remote_values.get_brightness() < ${brightness_floor} - 0.001f;
+            then:
+              - delay: 10ms
+              - light.control:
+                  id: word_clock
+                  brightness: ${brightness_floor}
+                  transition_length: 500ms
+        # Switch off at once, also when the request asks for a fade (for
+        # example a transition sent by Home Assistant). on_turn_off only fires
+        # after the fade has finished, so react to the requested state here.
         - if:
             condition:
               lambda: |-
