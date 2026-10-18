@@ -76,7 +76,7 @@
   var nextHourFrom = WC.nextHourFrom;
 
   function emptyDesign() {
-    return { name: '', customer: '', email: '', order: '', layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
+    return { name: '', customer: '', email: '', order: '', clock: 1, layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
       letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows() };
   }
 
@@ -92,10 +92,14 @@
 
   // A design file: the grid (see WordClock.readLayout) plus the user's
   // details and the layout revision.
+  // 1, 2, ... for the clocks of an order; anything else is 1.
+  function clockNumber(n) { return typeof n === 'number' && n >= 1 && n <= 99 && n % 1 === 0 ? n : 1; }
+
   function importDesign(data) {
     var d = WC.readLayout(data);
     d.customer = typeof data.customer_name === 'string' ? data.customer_name : '';
     d.order = typeof data.order_number === 'string' ? data.order_number : '';
+    d.clock = clockNumber(data.clock_number);
     d.email = typeof data.customer_email === 'string' ? data.customer_email : '';
     d.layoutRevision = typeof data.layout_revision === 'number' && data.layout_revision > 0 ? data.layout_revision : 1;
     d.letterSize = d.letterSize || WC.DEFAULT_LETTER_SIZE;
@@ -117,6 +121,8 @@
       customer_name: design.customer,
       customer_email: design.email,
       order_number: design.order,
+      // Which clock of the order this design is for (1, 2, ...).
+      clock_number: design.clock,
       // Letter height on the front plate (mm), read by the DXF generator.
       letter_size: design.letterSize,
       // Squares lit as minute dots without a letter of their own get a ".",
@@ -144,6 +150,7 @@
     ].concat(d.customer_name ? ['"customer_name": ' + JSON.stringify(d.customer_name)] : [],
       d.customer_email ? ['"customer_email": ' + JSON.stringify(d.customer_email)] : [],
       d.order_number ? ['"order_number": ' + JSON.stringify(d.order_number)] : [], [
+      '"clock_number": ' + d.clock_number,
       '"letter_size": ' + d.letter_size,
       '"letters": ' + rows(d.letters)
     ]).map(function (line) { return '  ' + line; }).join(',\n') + '\n}\n';
@@ -478,7 +485,8 @@
   function slug(text) { return text.replace(/[^\w-]+/g, '-').replace(/^-+|-+$/g, '').toLowerCase(); }
 
   function fileName() {
-    return (design.order ? 'order-' + slug(design.order) + '-' : '') + 'word-clock-design-r' + design.layoutRevision + '.json';
+    return (design.order ? 'order-' + slug(design.order) + '-' : '') + 'clock-' + design.clock +
+      '-word-clock-design-r' + design.layoutRevision + '.json';
   }
 
   // Download and email only with the user's details, and once the
@@ -534,12 +542,13 @@
   function email() {
     if (!confirmed()) return;
     download();
-    var subject = 'Word clock design' + (design.order ? ', order ' + design.order : '') +
+    var subject = 'Word clock design' + (design.order ? ', order ' + design.order : '') + ', clock ' + design.clock +
       (design.customer ? ', ' + design.customer : '');
     var body = 'Hello,\n\nAttached is my word clock design.\n\n' +
       (design.customer ? 'Name: ' + design.customer + '\n' : '') +
       (design.email ? 'Email: ' + design.email + '\n' : '') +
       (design.order ? 'Order number: ' + design.order + '\n' : '') +
+      'Clock number: ' + design.clock + '\n' +
       'Layout revision: ' + design.layoutRevision + '\n' +
       'File: ' + fileName() + '\n\n' +
       'I have checked the design and understand it can\'t be changed after sending.\n\n' +
@@ -648,6 +657,7 @@
     // Keep the user's name and order number when switching grids.
     next.customer = next.customer || design.customer;
     next.order = next.order || design.order;
+    next.clock = design.clock;
     next.email = next.email || design.email;
     design = next;
     save();
@@ -821,6 +831,10 @@
     customer.addEventListener('input', function () { design.customer = customer.value.trim(); save(); updateSendButtons(); });
     emailAddress.addEventListener('input', function () { design.email = emailAddress.value.trim(); save(); updateSendButtons(); });
     order.addEventListener('input', function () { design.order = order.value.trim(); save(); updateSendButtons(); });
+    var clock = $('#wcd-clock');
+    clock.value = design.clock;
+    clock.addEventListener('input', function () { design.clock = clockNumber(parseInt(clock.value, 10)); save(); });
+    clock.addEventListener('change', function () { clock.value = design.clock; });
     $('#wcd-confirm').addEventListener('change', updateSendButtons);
     $('#wcd-download').addEventListener('click', function () { if (confirmed()) download(); });
     $('#wcd-ha-copy').addEventListener('click', copyHomeAssistant);

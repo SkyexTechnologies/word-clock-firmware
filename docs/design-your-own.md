@@ -146,6 +146,11 @@ while you design.
         <input type="email" id="wcd-email-address" class="wcd-input" autocomplete="email" required aria-required="true">
         <label class="wcd-label" for="wcd-order">Order number</label>
         <input type="text" id="wcd-order" class="wcd-input" required aria-required="true" placeholder="From your order confirmation">
+        <label class="wcd-label" for="wcd-clock">Clock number in your order</label>
+        <input type="number" id="wcd-clock" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+        <p class="wcd-muted">Ordered more than one clock? Send a design for each clock, numbered
+        1, 2, 3 and so on. If several clocks get the same design, send it once and say in your
+        email how many clocks it is for.</p>
         <div class="wcd-check" id="wcd-send-check"></div>
         <p class="wcd-muted">Layout revision <strong id="wcd-revision"></strong>. It goes up by
         one when you open a design you sent before and change it.</p>
