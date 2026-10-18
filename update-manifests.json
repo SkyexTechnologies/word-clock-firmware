@@ -1,0 +1,7 @@
+{
+  "manifests": {
+    "word-clock.manifest.json": "latest",
+    "word-clock-1.manifest.json": "latest",
+    "word-clock-1-hw1.manifest.json": "latest"
+  }
+}
