@@ -37,6 +37,9 @@ while you design.
           <button type="button" class="wcd-card" data-example="italian" lang="it"><strong>Italiano</strong><span>SONO LE QUATTRO E VENTI</span></button>
           <button type="button" class="wcd-card" data-example="dutch" lang="nl"><strong>Nederlands</strong><span>HET IS TIEN VOOR HALF VIJF</span></button>
           <button type="button" class="wcd-card" data-example="frisian" lang="fy"><strong>Frysk</strong><span>IT IS TSIEN FOAR HEALWEI FIIF</span></button>
+          <button type="button" class="wcd-card" data-example="limburgish" lang="li"><strong>Limburgs</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
+          <button type="button" class="wcd-card" data-example="drents" lang="drt"><strong>Drents</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
+          <button type="button" class="wcd-card" data-example="zeeuws" lang="zea"><strong>Zeeuws</strong><span>HET IS TIEN VOOR ALF VUUF</span></button>
           <button type="button" class="wcd-card" data-example="swedish" lang="sv"><strong>Svenska</strong><span>KLOCKAN ÄR TJUGO ÖVER FYRA</span></button>
           <button type="button" class="wcd-card" data-example="norwegian" lang="nb"><strong>Norsk</strong><span>KLOKKEN ER TI PÅ HALV FEM</span></button>
           <button type="button" class="wcd-card" data-example="danish" lang="da"><strong>Dansk</strong><span>KLOKKEN ER TYVE OVER FIRE</span></button>

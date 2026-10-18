@@ -41,6 +41,9 @@ or in Home Assistant.
     <button type="button" class="wcd-chip" data-lang="italian" lang="it">Italiano</button>
     <button type="button" class="wcd-chip" data-lang="dutch" lang="nl">Nederlands</button>
     <button type="button" class="wcd-chip" data-lang="frisian" lang="fy">Frysk</button>
+    <button type="button" class="wcd-chip" data-lang="limburgish" lang="li">Limburgs</button>
+    <button type="button" class="wcd-chip" data-lang="drents" lang="drt">Drents</button>
+    <button type="button" class="wcd-chip" data-lang="zeeuws" lang="zea">Zeeuws</button>
     <button type="button" class="wcd-chip" data-lang="swedish" lang="sv">Svenska</button>
     <button type="button" class="wcd-chip" data-lang="norwegian" lang="nb">Norsk</button>
     <button type="button" class="wcd-chip" data-lang="danish" lang="da">Dansk</button>
