@@ -1,10 +1,15 @@
 #pragma once
 
+#include "esphome/components/web_server_base/web_server_base.h"
+#include "esphome/core/application.h"
 #include "esphome/core/component.h"
+#include "esphome/core/hal.h"
 #include "esphome/core/log.h"
 #include <EEPROM.h>
+#include <Esp.h>
 #include <cstddef>
 #include <cstring>
+#include <memory>
 #include <vector>
 
 namespace esphome {
@@ -61,8 +66,20 @@ static_assert(sizeof(LayoutBlob) == 1192, "LayoutBlob layout must match provisio
 // The EEPROM library's buffer, only allocated while reading or writing.
 static const uint16_t EEPROM_SIZE = sizeof(LayoutBlob);
 
-class WordClockLayout : public Component {
+// The upload page at /layout, around the status lines (upload_page.cpp).
+extern const char UPLOAD_PAGE_HEAD[] PROGMEM;
+extern const char UPLOAD_PAGE_TAIL[] PROGMEM;
+
+// Also serves /layout on the clock's web page: a user without Home Assistant
+// uploads a design file there. Allowed only during the upload window, the
+// first minutes after the clock was plugged in (or reset with the RST pin),
+// so changing the layout needs physical access. A restart from the web page
+// or Home Assistant doesn't open the window.
+class WordClockLayout : public AsyncWebHandler, public Component {
  public:
+  explicit WordClockLayout(web_server_base::WebServerBase *base) : base_(base) {}
+  void set_upload_window(uint32_t ms) { upload_window_ms_ = ms; }
+
   void setup() override {
     this->layout_eeprom_.begin(EEPROM_SIZE);
     this->layout_eeprom_.get(0, blob_);
@@ -70,8 +87,8 @@ class WordClockLayout : public Component {
     // buffer. Nothing was changed, so end() does not write to flash.
     this->layout_eeprom_.end();
 
-    loaded_ = blob_.magic == CONFIG_MAGIC && blob_.version == CONFIG_VERSION && blob_.crc == this->crc_() &&
-              this->values_valid_();
+    loaded_ = blob_.magic == CONFIG_MAGIC && blob_.version == CONFIG_VERSION && blob_.crc == crc_(blob_) &&
+              values_valid_(blob_);
 
     if (!loaded_) {
       ESP_LOGE(TAG, "No valid word layout in flash - running LED self-test until provisioned");
@@ -86,6 +103,66 @@ class WordClockLayout : public Component {
                "indications 0x%02X, next hour 0x%03X)",
                blob_.version, blob_.hardware_revision, blob_.layout_revision, blob_.features, blob_.next_hour_mask);
     }
+
+    uint32_t reason = ESP.getResetInfoPtr()->reason;
+    upload_open_ = reason == REASON_DEFAULT_RST || reason == REASON_EXT_SYS_RST;
+    ESP_LOGI(TAG, "Layout upload at /layout %s", upload_open_ ? "open after power-on" : "closed (not a power-on)");
+    this->base_->add_handler(this);
+  }
+
+  void loop() override {
+    // Latched, so the window doesn't reopen when millis() wraps after 49 days.
+    if (upload_open_ && millis() > upload_window_ms_) {
+      upload_open_ = false;
+      ESP_LOGI(TAG, "Layout upload window closed");
+    }
+    if (upload_ready_) {
+      upload_ready_ = false;
+      LayoutBlob candidate = *upload_;
+      upload_.reset();
+      if (this->store_(candidate)) {
+        upload_open_ = false;
+        // Restart so the indication settings follow the new layout; the
+        // delay lets the web page receive its answer first.
+        this->set_timeout(1000, []() { App.safe_reboot(); });
+      }
+    }
+  }
+
+  // AsyncWebHandler: GET shows the upload page, POST takes a LayoutBlob
+  // (hardware_revision 0, CRC over the bytes as sent).
+  bool canHandle(AsyncWebServerRequest *request) const override {
+    return request->url() == "/layout" && (request->method() == HTTP_GET || request->method() == HTTP_POST);
+  }
+  bool isRequestHandlerTrivial() const override { return false; }
+
+  void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) override {
+    if (index == 0) {
+      upload_received_ = 0;
+      upload_.reset();
+      if (upload_open_ && !upload_ready_ && total == sizeof(LayoutBlob))
+        upload_.reset(new LayoutBlob());
+    }
+    if (!upload_ || index != upload_received_ || index + len > sizeof(LayoutBlob))
+      return;
+    memcpy(reinterpret_cast<uint8_t *>(upload_.get()) + index, data, len);
+    upload_received_ += len;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) override {
+    if (request->method() == HTTP_GET) {
+      this->send_page_(request);
+      return;
+    }
+    const char *error = this->check_upload_();
+    if (error != nullptr) {
+      upload_.reset();
+      ESP_LOGW(TAG, "Layout upload refused: %s", error);
+      request->send(error == UPLOAD_CLOSED ? 403 : 400, "text/plain", error);
+      return;
+    }
+    upload_ready_ = true;  // written to flash from loop()
+    request->send(200, "text/plain", "Saved. The clock restarts and shows the new layout.");
   }
 
   // Drop-in replacement for words[word][slot]; -1 means "no more LEDs".
@@ -154,19 +231,45 @@ class WordClockLayout : public Component {
       }
     }
 
+    LayoutBlob candidate{};
     for (uint8_t w = 0; w < NUM_WORDS; w++)
       for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)
-        blob_.words[w][s] = (int8_t) flat[w * MAX_LEDS_PER_WORD + s];
+        candidate.words[w][s] = (int8_t) flat[w * MAX_LEDS_PER_WORD + s];
+    candidate.hardware_revision = (uint8_t) hardware_revision;
+    candidate.features = (has_it_is ? FEATURE_IT_IS : 0) | (has_minutes ? FEATURE_MINUTES : 0) |
+                         (has_weekdays ? FEATURE_WEEKDAYS : 0);
+    candidate.next_hour_mask = (uint16_t) next_hour_mask;
+    candidate.layout_revision = (uint16_t) layout_revision;
+    return this->store_(candidate);
+  }
 
-    blob_.magic = CONFIG_MAGIC;
-    blob_.version = CONFIG_VERSION;
-    blob_.hardware_revision = (uint8_t) hardware_revision;
-    blob_.features = (has_it_is ? FEATURE_IT_IS : 0) | (has_minutes ? FEATURE_MINUTES : 0) |
-                     (has_weekdays ? FEATURE_WEEKDAYS : 0);
-    blob_.reserved = 0;
-    blob_.next_hour_mask = (uint16_t) next_hour_mask;
-    blob_.layout_revision = (uint16_t) layout_revision;
-    blob_.crc = this->crc_();
+ protected:
+  static constexpr const char *TAG = "wordclock_layout";
+  static constexpr const char *UPLOAD_CLOSED =
+      "Uploading is closed. Unplug the clock, plug it back in and upload within 15 minutes.";
+  web_server_base::WebServerBase *base_;
+  EEPROMClass layout_eeprom_{LAYOUT_FLASH_SECTOR};
+  LayoutBlob blob_{};
+  bool loaded_{false};
+  uint32_t upload_window_ms_{0};
+  bool upload_open_{false};
+  // Set by the web server, handled in loop().
+  volatile bool upload_ready_{false};
+  std::unique_ptr<LayoutBlob> upload_;
+  size_t upload_received_{0};
+
+  // Fills in the header and CRC, then saves to flash. hardware_revision is
+  // already resolved (1-255).
+  bool store_(LayoutBlob candidate) {
+    candidate.magic = CONFIG_MAGIC;
+    candidate.version = CONFIG_VERSION;
+    candidate.reserved = 0;
+    if (!values_valid_(candidate)) {
+      ESP_LOGE(TAG, "Layout values are invalid; not saved");
+      return false;
+    }
+    candidate.crc = crc_(candidate);
+    blob_ = candidate;
 
     // The buffer is only allocated while writing (see setup()).
     this->layout_eeprom_.begin(EEPROM_SIZE);
@@ -183,27 +286,55 @@ class WordClockLayout : public Component {
     return loaded_;
   }
 
- protected:
-  static constexpr const char *TAG = "wordclock_layout";
-  EEPROMClass layout_eeprom_{LAYOUT_FLASH_SECTOR};
-  LayoutBlob blob_{};
-  bool loaded_{false};
+  // nullptr when the received upload can be saved, otherwise the reason.
+  // Keeps the clock's hardware revision.
+  const char *check_upload_() {
+    if (!upload_open_)
+      return UPLOAD_CLOSED;
+    if (upload_ready_)
+      return "An upload is already being saved.";
+    if (!upload_ || upload_received_ != sizeof(LayoutBlob))
+      return "The upload was incomplete or not a word clock layout.";
+    if (upload_->magic != CONFIG_MAGIC || upload_->version != CONFIG_VERSION || upload_->crc != crc_(*upload_))
+      return "This is not a word clock layout, or it was damaged on the way.";
+    if (!loaded_)
+      return "This clock has no layout yet. Contact Skyex Technologies.";
+    upload_->hardware_revision = blob_.hardware_revision;
+    if (!values_valid_(*upload_))
+      return "The layout contains invalid values.";
+    return nullptr;
+  }
 
-  bool values_valid_() const {
-    if (blob_.hardware_revision == 0 || (blob_.features & ~FEATURE_ALL) != 0 ||
-        (blob_.next_hour_mask & ~NEXT_HOUR_ALL) != 0)
+  void send_page_(AsyncWebServerRequest *request) {
+    AsyncResponseStream *stream = request->beginResponseStream("text/html");
+    stream->print(FPSTR(UPLOAD_PAGE_HEAD));
+    if (!upload_open_) {
+      stream->print(F("<p class=\"closed\">Uploading is closed. Unplug the clock, plug it back in and reload this "
+                      "page within 15 minutes.</p>"));
+    } else {
+      stream->printf("<p>Uploading is open for %u more minutes.</p>",
+                     (unsigned) ((upload_window_ms_ - millis()) / 60000 + 1));
+    }
+    stream->printf("<p>Current layout revision: %u.</p>", (unsigned) blob_.layout_revision);
+    stream->print(FPSTR(UPLOAD_PAGE_TAIL));
+    request->send(stream);
+  }
+
+  static bool values_valid_(const LayoutBlob &blob) {
+    if (blob.hardware_revision == 0 || (blob.features & ~FEATURE_ALL) != 0 ||
+        (blob.next_hour_mask & ~NEXT_HOUR_ALL) != 0)
       return false;
     for (uint8_t w = 0; w < NUM_WORDS; w++)
       for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)
-        if (blob_.words[w][s] < -1 || blob_.words[w][s] >= NUM_LEDS)
+        if (blob.words[w][s] < -1 || blob.words[w][s] >= NUM_LEDS)
           return false;
     return true;
   }
 
   // CRC-32 as computed by zlib.crc32() (reflected, polynomial 0xEDB88320).
-  uint32_t crc_() const {
+  static uint32_t crc_(const LayoutBlob &blob) {
     uint32_t crc = 0xFFFFFFFF;
-    const uint8_t *p = reinterpret_cast<const uint8_t *>(&blob_);
+    const uint8_t *p = reinterpret_cast<const uint8_t *>(&blob);
     for (size_t i = 0; i < offsetof(LayoutBlob, crc); i++) {
       crc ^= p[i];
       for (uint8_t bit = 0; bit < 8; bit++)

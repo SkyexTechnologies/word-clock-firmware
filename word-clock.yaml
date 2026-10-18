@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.4.0"
+  project_version: "1.5.0"
   # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this URL built in: never rename that
