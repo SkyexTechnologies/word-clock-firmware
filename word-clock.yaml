@@ -2,12 +2,18 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.5.0"
-  # Firmware update manifest (ESPHome manifest JSON with the OTA binary and
+  project_version: "1.6.0"
+  # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
-  # word-clock-firmware. Every clock has this URL built in: never rename that
-  # account or repository, GitHub Pages doesn't redirect.
-  update_manifest_url: "https://skyextechnologies.github.io/word-clock-firmware/firmware/word-clock.manifest.json"
+  # word-clock-firmware. Every clock has this address built in: never rename
+  # that account or repository, GitHub Pages doesn't redirect.
+  update_manifest_base: "https://skyextechnologies.github.io/word-clock-firmware/firmware/"
+  # Compatibility line. A clock reads word-clock-<line>-hw<hardware
+  # revision>.manifest.json (word-clock-<line>.manifest.json without a
+  # layout), so a release can be kept from older lines or hardware revisions
+  # (update-manifests.json). Raise it with a release older clocks must not
+  # install.
+  update_line: "1"
   # Lowest brightness (0-1), for automatic and manual brightness alike. Below
   # about 20 % the LEDs' 8-bit channels (after gamma correction) round the
   # weaker colour channels to 0, so mixed colours shift (orange turns red).
@@ -40,6 +46,12 @@ esphome:
             id(indication_it_is)->set_internal(!id(layout).has_feature(FEATURE_IT_IS));
             id(indication_minutes)->set_internal(!id(layout).has_feature(FEATURE_MINUTES));
             id(indication_week_days)->set_internal(!id(layout).has_feature(FEATURE_WEEKDAYS));
+            // The update manifest for this clock's hardware revision. The
+            // first update check runs at least 10 s after setup.
+            if (id(layout).is_provisioned())
+              id(firmware_update)->set_source_url(
+                  str_sprintf("${update_manifest_base}word-clock-${update_line}-hw%u.manifest.json",
+                              id(layout).hardware_revision()));
     - priority: -10
       then:
         # Turn on with the Clock effect in one call: the effect is dropped while
@@ -145,7 +157,8 @@ update:
   - platform: http_request
     id: firmware_update
     name: "Firmware"
-    source: ${update_manifest_url}
+    # Without a layout; on_boot picks the hardware revision's manifest.
+    source: "${update_manifest_base}word-clock-${update_line}.manifest.json"
     # Checks every 6 hours (default); installing is always a user action.
 
 wifi:
