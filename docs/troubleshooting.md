@@ -73,9 +73,32 @@ Assistant or the internet as soon as it is back on Wi-Fi.
 ## Changing your layout
 
 Does a word on your clock light the wrong squares, or does it name the wrong
-hour? If your clock is added to [Home Assistant](home-assistant.html), you can
-send it a corrected layout.
-This changes which squares light up; the letters on the clock stay the same.
+hour? You can send your clock a corrected layout, from the clock's own web page
+or through [Home Assistant](home-assistant.html). This changes which squares
+light up; the letters on the clock stay the same.
+
+### On the clock's web page
+
+You don't need Home Assistant for this. For safety, the clock only accepts a
+layout in the first 15 minutes after you plug it in.
+
+1. Open your design in the [designer](design-your-own.html): in step 1, choose
+   **Open it** and select the design file you sent us. Make your correction.
+2. In step 5, click **Download only** to save the corrected design file.
+3. Unplug the clock and plug it back in. Restarting it from its web page or
+   Home Assistant doesn't count.
+4. Within 15 minutes, open `http://word-clock-xxxxxx.local/layout` on a
+   computer or phone on the same Wi-Fi network (or `http://<ip-address>/layout`;
+   see [Getting started](getting-started.html)).
+5. Choose the design file and click **Upload**. The clock restarts and shows
+   the new layout. Your settings stay as they were.
+
+If the page says uploading is closed, unplug the clock, plug it back in and
+try again.
+
+### Through Home Assistant
+
+Your clock must be added to Home Assistant.
 
 1. Open your design in the [designer](design-your-own.html): in step 1, choose
    **Open it** and select the design file you sent us. Make your correction.
