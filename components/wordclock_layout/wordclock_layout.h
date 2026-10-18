@@ -42,6 +42,11 @@ static const uint8_t FEATURE_MINUTES = 1 << 1;   // four minute dots
 static const uint8_t FEATURE_WEEKDAYS = 1 << 2;  // weekday letters
 static const uint8_t FEATURE_ALL = FEATURE_IT_IS | FEATURE_MINUTES | FEATURE_WEEKDAYS;
 
+// Hardware options of this clock (LayoutBlob::options bits). 0 is the
+// standard clock, so layouts written before firmware 1.7.0 keep everything.
+static const uint8_t OPTION_NO_LIGHT_SENSOR = 1 << 0;  // no light sensor fitted
+static const uint8_t OPTIONS_ALL = OPTION_NO_LIGHT_SENSOR;
+
 // Minute phrases (bits 0-11 of LayoutBlob::next_hour_mask).
 static const uint16_t NEXT_HOUR_ALL = 0x0FFF;
 
@@ -51,12 +56,15 @@ struct LayoutBlob {
   uint8_t version;
   uint8_t hardware_revision;  // 1-255
   uint8_t features;           // FEATURE_* bits
-  uint8_t reserved;           // 0
+  // OPTION_* bits. Written over USB only (scripts/provision_layout_usb.py);
+  // the API and the web upload keep the stored value. Was reserved (always
+  // 0) before firmware 1.7.0.
+  uint8_t options;
   // Bit n set: the minute phrase for :(5n) names the next hour, e.g. Dutch
   // "tien voor half vijf" at 4:20 (bits 4-11), English "twenty-five to five"
   // at 4:35 (bits 7-11), Korean never (0).
   uint16_t next_hour_mask;
-  // Version of this clock's design (1, 2, ... as the customer corrects it);
+  // Version of this clock's design (1, 2, ... as its owner corrects it);
   // 0 = not set. Was reserved (always 0) before firmware 1.2.0.
   uint16_t layout_revision;
   int8_t words[NUM_WORDS][MAX_LEDS_PER_WORD];
@@ -95,13 +103,15 @@ class WordClockLayout : public AsyncWebHandler, public Component {
       memset(blob_.words, -1, sizeof(blob_.words));
       blob_.hardware_revision = 0;
       blob_.features = 0;
+      blob_.options = 0;
       blob_.next_hour_mask = 0;
       blob_.layout_revision = 0;
     } else {
       ESP_LOGI(TAG,
                "Loaded word layout from flash (version %u, hardware revision %u, layout revision %u, "
-               "indications 0x%02X, next hour 0x%03X)",
-               blob_.version, blob_.hardware_revision, blob_.layout_revision, blob_.features, blob_.next_hour_mask);
+               "indications 0x%02X, options 0x%02X, next hour 0x%03X)",
+               blob_.version, blob_.hardware_revision, blob_.layout_revision, blob_.features, blob_.options,
+               blob_.next_hour_mask);
     }
 
     uint32_t reason = ESP.getResetInfoPtr()->reason;
@@ -130,7 +140,8 @@ class WordClockLayout : public AsyncWebHandler, public Component {
   }
 
   // AsyncWebHandler: GET shows the upload page, POST takes a LayoutBlob
-  // (hardware_revision 0, CRC over the bytes as sent).
+  // (hardware_revision and options 0: the clock keeps its own; CRC over the
+  // bytes as sent).
   bool canHandle(AsyncWebServerRequest *request) const override {
     return request->url() == "/layout" && (request->method() == HTTP_GET || request->method() == HTTP_POST);
   }
@@ -192,11 +203,13 @@ class WordClockLayout : public AsyncWebHandler, public Component {
   uint16_t layout_revision() const { return blob_.layout_revision; }
   // An unprovisioned clock reports every indication, so nothing is hidden.
   bool has_feature(uint8_t feature) const { return !loaded_ || (blob_.features & feature) != 0; }
+  // False only when the layout says no sensor is fitted.
+  bool has_light_sensor() const { return !loaded_ || (blob_.options & OPTION_NO_LIGHT_SENSOR) == 0; }
 
   // `flat` is NUM_WORDS * MAX_LEDS_PER_WORD entries, row-major. Called from
-  // the set_word_layout API action (factory script, or a customer through
+  // the set_word_layout API action (factory script, or the owner through
   // Home Assistant), never by the update flow. hardware_revision 0 keeps the
-  // clock's stored revision, so a customer can't change it by accident.
+  // clock's stored revision, so an owner can't change it by accident.
   bool write_layout(const std::vector<int32_t> &flat, int32_t hardware_revision, bool has_it_is, bool has_minutes,
                     bool has_weekdays, int32_t next_hour_mask, int32_t layout_revision) {
     if (flat.size() != (size_t) NUM_WORDS * MAX_LEDS_PER_WORD) {
@@ -236,6 +249,7 @@ class WordClockLayout : public AsyncWebHandler, public Component {
       for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)
         candidate.words[w][s] = (int8_t) flat[w * MAX_LEDS_PER_WORD + s];
     candidate.hardware_revision = (uint8_t) hardware_revision;
+    candidate.options = loaded_ ? blob_.options : 0;  // USB only, see LayoutBlob
     candidate.features = (has_it_is ? FEATURE_IT_IS : 0) | (has_minutes ? FEATURE_MINUTES : 0) |
                          (has_weekdays ? FEATURE_WEEKDAYS : 0);
     candidate.next_hour_mask = (uint16_t) next_hour_mask;
@@ -263,7 +277,6 @@ class WordClockLayout : public AsyncWebHandler, public Component {
   bool store_(LayoutBlob candidate) {
     candidate.magic = CONFIG_MAGIC;
     candidate.version = CONFIG_VERSION;
-    candidate.reserved = 0;
     if (!values_valid_(candidate)) {
       ESP_LOGE(TAG, "Layout values are invalid; not saved");
       return false;
@@ -300,6 +313,7 @@ class WordClockLayout : public AsyncWebHandler, public Component {
     if (!loaded_)
       return "This clock has no layout yet. Contact Skyex Technologies.";
     upload_->hardware_revision = blob_.hardware_revision;
+    upload_->options = blob_.options;
     if (!values_valid_(*upload_))
       return "The layout contains invalid values.";
     return nullptr;
@@ -321,7 +335,7 @@ class WordClockLayout : public AsyncWebHandler, public Component {
   }
 
   static bool values_valid_(const LayoutBlob &blob) {
-    if (blob.hardware_revision == 0 || (blob.features & ~FEATURE_ALL) != 0 ||
+    if (blob.hardware_revision == 0 || (blob.features & ~FEATURE_ALL) != 0 || (blob.options & ~OPTIONS_ALL) != 0 ||
         (blob.next_hour_mask & ~NEXT_HOUR_ALL) != 0)
       return false;
     for (uint8_t w = 0; w < NUM_WORDS; w++)

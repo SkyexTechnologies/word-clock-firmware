@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.6.1"
+  project_version: "1.7.0"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -37,7 +37,8 @@ esphome:
   on_boot:
     # After the layout component (setup priority 600) has loaded the factory
     # data, before Wi-Fi (250): hide the switches of indications this clock
-    # doesn't have. ESPHome only allows this once per boot, before Home
+    # doesn't have, and the automatic brightness settings without a light
+    # sensor. ESPHome only allows this once per boot, before Home
     # Assistant and the web page list the entities.
     - priority: 500
       then:
@@ -46,6 +47,13 @@ esphome:
             id(indication_it_is)->set_internal(!id(layout).has_feature(FEATURE_IT_IS));
             id(indication_minutes)->set_internal(!id(layout).has_feature(FEATURE_MINUTES));
             id(indication_week_days)->set_internal(!id(layout).has_feature(FEATURE_WEEKDAYS));
+            if (!id(layout).has_light_sensor()) {
+              id(automatic_brightness)->set_internal(true);
+              id(minimum_brightness)->set_internal(true);
+              id(maximum_brightness)->set_internal(true);
+              // A0 is unconnected: don't read random values.
+              id(light_sensor)->stop_poller();
+            }
             // The update manifest for this clock's hardware revision. The
             // first update check runs at least 10 s after setup.
             if (id(layout).is_provisioned())
@@ -190,7 +198,7 @@ time:
   # Home Assistant supplies both current time and its configured timezone over
   # the native API. With no explicit timezone here, HA's timezone is applied
   # dynamically when this source syncs. Until then, apply_timezone sets
-  # Amsterdam (option 0 of 06. Time Zone).
+  # Amsterdam (option 0 of 03. Time Zone).
   - platform: homeassistant
     id: homeassistant_time
     on_time_sync:
@@ -269,7 +277,7 @@ binary_sensor:
 
 select:
   - platform: template
-    name: "06. Time Zone"
+    name: "03. Time Zone"
     id: timezone
     restore_value: True
     optimistic: True
@@ -302,7 +310,7 @@ select:
 
 switch:
   - platform: template
-    name: "03. Automatic Brightness"
+    name: "04. Automatic Brightness"
     id: automatic_brightness
     optimistic: True
     restore_mode: RESTORE_DEFAULT_ON
@@ -433,13 +441,14 @@ script:
                 float brightness;
                 if (!id(layout).is_provisioned()) {
                   // No layout: the colour test runs at full brightness, whatever
-                  // the sensor or the 03. Automatic Brightness switch says.
+                  // the sensor or the 04. Automatic Brightness switch says.
                   brightness = 1.0f;
-                } else if (!id(automatic_brightness).state ||
+                } else if (!id(layout).has_light_sensor() || !id(automatic_brightness).state ||
                            std::isnan(id(light_sensor).state)) {
-                  // Manual brightness, or no sensor reading yet (up to 15 s
-                  // after boot, while the brightness numbers already call this
-                  // script when they restore): leave the brightness alone.
+                  // No light sensor fitted, manual brightness, or no sensor
+                  // reading yet (up to 15 s after boot, while the brightness
+                  // numbers already call this script when they restore):
+                  // leave the brightness alone.
                   return;
                 } else {
                   const float floor_b = ${brightness_floor};
@@ -467,7 +476,7 @@ number:
     restore_value: True
     icon: "mdi:transition"
   - platform: template
-    name: "04. Minimum Brightness"
+    name: "05. Minimum Brightness"
     id: minimum_brightness
     optimistic: True
     min_value: ${brightness_floor}
@@ -487,7 +496,7 @@ number:
           id: set_light_brightness
           quick_transition: True
   - platform: template
-    name: "05. Maximum Brightness"
+    name: "06. Maximum Brightness"
     id: maximum_brightness
     optimistic: True
     min_value: ${brightness_floor}
@@ -509,7 +518,8 @@ number:
           quick_transition: True
 text_sensor:
   # Factory data from the layout sector: hardware revision and fitted
-  # indications. Written with the layout (scripts/provision_layout*.py).
+  # indications, plus "no light sensor" when none is fitted. Written with the
+  # layout (scripts/provision_layout*.py).
   - platform: template
     name: "Hardware"
     icon: "mdi:chip"
@@ -526,7 +536,9 @@ text_sensor:
       fitted = fitted.empty() ? std::string("none") : fitted.substr(0, fitted.size() - 2);
       std::string layout_rev = id(layout).layout_revision()
           ? ", layout " + std::to_string(id(layout).layout_revision()) : std::string("");
-      return "Revision " + std::to_string(id(layout).hardware_revision()) + layout_rev + " (indications: " + fitted + ")";
+      std::string sensor = id(layout).has_light_sensor() ? std::string("") : std::string(", no light sensor");
+      return "Revision " + std::to_string(id(layout).hardware_revision()) + layout_rev + " (indications: " + fitted +
+             ")" + sensor;
   - platform: template
     name: "Firmware Update"
     icon: "mdi:update"
