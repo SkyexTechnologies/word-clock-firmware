@@ -59,8 +59,8 @@ or in Home Assistant.
   <ul class="wcl-explain" id="wcl-explain"></ul>
 </div>
 
-<script src="{{ '/assets/js/wordclock.js' | relative_url }}" defer></script>
-<script src="{{ '/assets/js/home-clock.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/wordclock.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+<script src="{{ '/assets/js/home-clock.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
 
 ## Where to start
 

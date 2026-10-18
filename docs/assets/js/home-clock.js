@@ -19,7 +19,7 @@
     cells.forEach(function (cell) {
       var l = cell.led, p = WC.pos(l);
       var ch = current.letters[p.row][p.col] || (dots.has(l) ? WC.DOT : '');
-      cell.el.textContent = ch === WC.DOT ? '' : ch;
+      WC.fillCell(cell.el, ch);
       cell.el.className = 'wcd-cell' + (ch === WC.DOT ? ' is-dot' : '') + (lit.has(l) ? ' is-lit' : '');
     });
     root.querySelector('#wcl-time').textContent = h + ':' + pad(m);
@@ -86,6 +86,7 @@
         cells.push({ el: el, led: WC.led(r, c) });
       }
     }
+    WC.sizeLetters(grid, WC.DEFAULT_LETTER_SIZE);
     root.querySelectorAll('[data-lang]').forEach(function (b) {
       b.addEventListener('click', function () { choose(b.dataset.lang); });
     });

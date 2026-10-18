@@ -366,9 +366,16 @@ figure.highlight {
     padding: 10px;
     background: #0b0b0d;
     border-radius: 10px;
-    // Lets the letters scale with the clock face (cqi units below).
-    container-type: inline-size;
+
+    // Step 5: the whole front plate, square corners (padding set by
+    // showPlate() in designer.js).
+    &.is-plate { border-radius: 2px; }
   }
+
+  // The font of the front plates (Arial Unicode MS, word-clock-dxf-generator),
+  // as installed on the visitor's device; it is never downloaded. Regular
+  // only: the plate font has no bold.
+  $wcd-plate-font: "Arial Unicode MS", Arial, "Helvetica Neue", Helvetica, sans-serif;
 
   .wcd-cell {
     display: flex;
@@ -382,10 +389,17 @@ figure.highlight {
     background: none;
     color: #3a3b40;
     font: inherit;
-    font-size: clamp(0.7rem, 2.6vw, 1.05rem);
-    // About half a square, at any size of the clock face (phone or computer).
-    font-size: 4.3cqi;
-    font-weight: 600;
+    font-family: $wcd-plate-font;
+    font-feature-settings: normal;
+    // To scale with the front plate, set in px by WordClock.sizeLetters()
+    // from the distance between the squares. Not container units: Safari
+    // applies its page zoom to those twice, and the letters overflow.
+    font-size: var(--wcd-font, clamp(0.7rem, 2.6vw, 1.05rem));
+    font-weight: 400;
+    // The letters fill most of a square; the page's line height would make
+    // the squares taller than wide.
+    line-height: 1;
+    min-height: 0;
     cursor: default;
     transition: color 0.15s, background-color 0.15s, text-shadow 0.15s;
 
@@ -396,10 +410,25 @@ figure.highlight {
 
     // Minute dots: a round dot in the middle of the square, in the cell's
     // text colour (so it lights and dims like the letters).
+    position: relative;
+
+    // The apostrophe of O': as the DXF generator places it, 55% of the
+    // letter size, its middle 0.48 letter heights right of and 0.32 above
+    // the square's centre (a letter height is 0.716em in the plate font).
+    .wcd-accent {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      font-size: 0.55em;
+      transform: translate(calc(-50% + 0.48 * 0.716em / 0.55), calc(-50% - 0.32 * 0.716em / 0.55));
+      pointer-events: none;
+    }
+
+    // The plate's dot: a third of the letter height across (0.24em).
     &.is-dot::before {
       content: "";
-      width: 0.3em;
-      height: 0.3em;
+      width: 0.24em;
+      height: 0.24em;
       border-radius: 50%;
       background: currentColor;
     }
@@ -457,8 +486,10 @@ figure.highlight {
   .wcd-letter {
     max-width: 4rem;
     text-align: center;
+    font-family: $wcd-plate-font;
+    font-feature-settings: normal;
     font-size: 1.25rem;
-    font-weight: 600;
+    font-weight: 400;
     text-transform: uppercase;
   }
 

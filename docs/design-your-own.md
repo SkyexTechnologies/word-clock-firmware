@@ -63,6 +63,15 @@ while you design.
           <li>Squares you don't need for the time can hold anything: a name, a
           message or random letters.</li>
         </ul>
+        <span class="wcd-label">Letter size on your clock</span>
+        <div class="wcd-chips" role="group" aria-label="Letter size on your clock">
+          <button type="button" class="wcd-chip" data-letter-size="10">Extra small (10 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="12">Small (12 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="14">Medium (14 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="16">Large (16 mm)</button>
+        </div>
+        <p class="wcd-muted">The grid shows the letters at this size, in the font of the front plate.</p>
+        <p class="wcd-attach" id="wcd-size-warning" role="status" hidden></p>
         <label class="wcd-label" for="wcd-letter">Letter</label>
         <input type="text" id="wcd-letter" class="wcd-input wcd-letter" autocomplete="off" autocapitalize="characters">
         <p class="wcd-muted" id="wcd-letter-pos">Choose a square in the grid.</p>
@@ -115,6 +124,9 @@ while you design.
 
       <div class="wcd-panel" data-step="send" hidden>
         <h3 class="wcd-title">5. Send your design</h3>
+        <p>This is your front plate: 30 × 30 cm, with the letters at the size you
+        chose. The black border of about 2.5 cm around the letters is part of the
+        design.</p>
         <div class="wcd-attach" role="note">
           <strong>Use the details from your order.</strong> Fill in the same name
           and email address you used when ordering your clock, and its order
@@ -168,8 +180,8 @@ while you design.
   </div>
 </div>
 
-<script src="{{ '/assets/js/wordclock.js' | relative_url }}" defer></script>
-<script src="{{ '/assets/js/designer.js' | relative_url }}" defer></script>
+<script src="{{ '/assets/js/wordclock.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
+<script src="{{ '/assets/js/designer.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
 
 ## Help
 

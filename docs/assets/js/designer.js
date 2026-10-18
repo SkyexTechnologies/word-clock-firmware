@@ -25,6 +25,17 @@
   var ORDER_EMAIL = 'skyex.technologies@gmail.com';
   var APOSTROPHES = ["'", '’'];
   var STEPS = ['start', 'letters', 'words', 'check', 'send'];
+  // 23.2 mm between squares x 0.716, the capital height of Arial (Unicode
+  // MS) per em: font size = distance between squares x letter size / this.
+  var CAP_PER_PITCH = 23.2 * 0.716;
+  var PITCH_MM = 23.2;
+  // The front plate is 300 mm square; the outer letters' centres are 116 mm
+  // from its middle (word_clock_config.yaml in word-clock-dxf-generator).
+  var PLATE_MM = 300, OUTER_CENTRE_MM = 116;
+  // The front plate's font (word-clock-dxf-generator), as in .wcd-cell.
+  var PLATE_FONT = '"Arial Unicode MS", Arial, "Helvetica Neue", Helvetica, sans-serif';
+  // Warn when two neighbouring letters come closer than this on the plate.
+  var CLEARANCE_MM = 1;
 
   // The example grids are the layout files in site/layouts/ (the same files
   // the provisioning scripts use), loaded when chosen.
@@ -66,7 +77,7 @@
 
   function emptyDesign() {
     return { name: '', customer: '', email: '', order: '', layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
-      letters: WC.blankLetters(), words: WC.blankRows() };
+      letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows() };
   }
 
   function loadExample(key) {
@@ -87,6 +98,7 @@
     d.order = typeof data.order_number === 'string' ? data.order_number : '';
     d.email = typeof data.customer_email === 'string' ? data.customer_email : '';
     d.layoutRevision = typeof data.layout_revision === 'number' && data.layout_revision > 0 ? data.layout_revision : 1;
+    d.letterSize = d.letterSize || WC.DEFAULT_LETTER_SIZE;
     return d;
   }
 
@@ -105,6 +117,8 @@
       customer_name: design.customer,
       customer_email: design.email,
       order_number: design.order,
+      // Letter height on the front plate (mm), read by the DXF generator.
+      letter_size: design.letterSize,
       // Squares lit as minute dots without a letter of their own get a ".",
       // so the DXF generator engraves a dot there.
       letters: design.letters.map(function (row, r) {
@@ -130,6 +144,7 @@
     ].concat(d.customer_name ? ['"customer_name": ' + JSON.stringify(d.customer_name)] : [],
       d.customer_email ? ['"customer_email": ' + JSON.stringify(d.customer_email)] : [],
       d.order_number ? ['"order_number": ' + JSON.stringify(d.order_number)] : [], [
+      '"letter_size": ' + d.letter_size,
       '"letters": ' + rows(d.letters)
     ]).map(function (line) { return '  ' + line; }).join(',\n') + '\n}\n';
   }
@@ -184,6 +199,74 @@
     return { hour: parseInt(t[0], 10) || 0, minute: parseInt(t[1], 10) || 0 };
   }
 
+  /* ---------- letters that may touch on the plate ---------- */
+  // A character's outline around the centre of its square, in letter heights
+  // (the height of an H), as the DXF generator places it: the middle of the
+  // capital height on the centre. Measured in the plate's font.
+  var measureCtx = null, extents = {};
+  function extent(ch) {
+    if (extents[ch]) return extents[ch];
+    if (!measureCtx) {
+      measureCtx = document.createElement('canvas').getContext('2d');
+      measureCtx.font = '400 100px ' + PLATE_FONT;
+      measureCtx.textAlign = 'center';
+      measureCtx.textBaseline = 'alphabetic';
+    }
+    var cap = measureCtx.measureText('H').actualBoundingBoxAscent, m = measureCtx.measureText(ch);
+    return (extents[ch] = {
+      top: m.actualBoundingBoxAscent / cap - 0.5, bottom: m.actualBoundingBoxDescent / cap + 0.5,
+      left: m.actualBoundingBoxLeft / cap, right: m.actualBoundingBoxRight / cap
+    });
+  }
+
+  // Pairs of neighbouring squares whose letters come closer than
+  // CLEARANCE_MM at the chosen letter size, e.g. Ç above Ü at 16 mm.
+  function touchingLetters() {
+    var size = design.letterSize, found = [];
+    function main(r, c) {
+      var ch = design.letters[r][c];
+      return ch && ch !== DOT ? Array.from(ch)[0] : '';
+    }
+    for (var r = 0; r < SIZE; r++) {
+      for (var c = 0; c < SIZE; c++) {
+        var a = main(r, c);
+        if (!a) continue;
+        var below = r + 1 < SIZE ? main(r + 1, c) : '', right = c + 1 < SIZE ? main(r, c + 1) : '';
+        if (below && PITCH_MM - size * (extent(a).bottom + extent(below).top) < CLEARANCE_MM) {
+          found.push(a + ' above ' + below + ' (column ' + (c + 1) + ')');
+        }
+        if (right && PITCH_MM - size * (extent(a).right + extent(right).left) < CLEARANCE_MM) {
+          found.push(a + right + ' (row ' + (r + 1) + ')');
+        }
+      }
+    }
+    return found;
+  }
+
+  function showTouching() {
+    var box = $('#wcd-size-warning'), found = touchingLetters();
+    box.hidden = !found.length;
+    if (!found.length) return;
+    box.textContent = 'At ' + design.letterSize + ' mm these letters may touch on the plate: ' +
+      found.slice(0, 5).join(', ') + (found.length > 5 ? ' and ' + (found.length - 5) + ' more' : '') +
+      '. Change one of these letters, or change the layout so they aren\'t next to each other.';
+  }
+
+  // Step 5 shows the whole front plate: the black border around the letters
+  // to scale. The padding puts the grid's edge where the plate's edge is,
+  // (PLATE_MM / 2 - OUTER_CENTRE_MM) from the outer letters' centres.
+  function showPlate() {
+    if (step !== 'send') {
+      gridEl.style.padding = '';
+      gridEl.classList.remove('is-plate');
+      return;
+    }
+    var gap = 2, width = gridEl.offsetWidth;
+    var a = ((PLATE_MM / 2 - OUTER_CENTRE_MM) / PITCH_MM - 0.5) / SIZE;
+    gridEl.style.padding = ((a * (width + gap) + gap / 2) / (1 + 2 * a)).toFixed(2) + 'px';
+    gridEl.classList.add('is-plate');
+  }
+
   function render() {
     var lit = new Set(), inPhrase = new Set(), used = new Set();
     var now = new Date();
@@ -198,12 +281,21 @@
     }
     var minuteLeds = new Set();
     design.words.slice(33, 37).forEach(function (w) { w.forEach(function (l) { minuteLeds.add(l); }); });
+    if (step === 'letters') showTouching();
+    showPlate();
+    // The letters at their real size on the plate (after the plate border).
+    WC.sizeLetters(gridEl, design.letterSize);
+    root.querySelectorAll('[data-letter-size]').forEach(function (b) {
+      var on = parseInt(b.dataset.letterSize, 10) === design.letterSize;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on);
+    });
     gridEl.querySelectorAll('button').forEach(function (cell) {
       var l = parseInt(cell.dataset.led, 10), p = pos(l);
       var ch = design.letters[p.row][p.col] || (minuteLeds.has(l) ? DOT : '');
       // A "." is drawn as a round dot centred in its square (CSS), not on
-      // the text baseline.
-      cell.textContent = ch === DOT ? '' : ch;
+      // the text baseline; O' as the plate has it (WordClock.fillCell).
+      WC.fillCell(cell, ch);
       cell.className = 'wcd-cell' + (ch === DOT ? ' is-dot' : '');
       if (lit.has(l)) cell.classList.add('is-lit');
       if (step === 'words') {
@@ -513,8 +605,10 @@
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#0b0b0d';
     ctx.fillRect(0, 0, SIZE_PX, SIZE_PX);
-    var fontSize = Math.round(cell * 0.42);
-    ctx.font = '600 ' + fontSize + 'px Inter, system-ui, -apple-system, "Hiragino Sans", "Apple SD Gothic Neo", "PingFang SC", sans-serif';
+    // As on the plate: letter height (H) design.letterSize mm of 23.2 mm
+    // between squares, in the plate's font (see .wcd-cell).
+    var fontSize = Math.round((cell + GAP) * design.letterSize / CAP_PER_PITCH);
+    ctx.font = '400 ' + fontSize + 'px ' + PLATE_FONT;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (var r = 0; r < SIZE; r++) {
@@ -527,10 +621,18 @@
         ctx.shadowBlur = on ? 16 : 0;
         if (ch === DOT) {
           ctx.beginPath();
-          ctx.arc(x, y, fontSize * 0.15, 0, 2 * Math.PI);
+          ctx.arc(x, y, fontSize * 0.12, 0, 2 * Math.PI);
           ctx.fill();
         } else if (ch) {
-          ctx.fillText(ch, x, y);
+          // As fillCell and the DXF generator: the first character centred,
+          // an apostrophe after it smaller at the upper right.
+          var chars = Array.from(ch), cap = fontSize * 0.716;
+          ctx.fillText(chars[0], x, y);
+          if (chars.length > 1) {
+            ctx.font = '400 ' + Math.round(fontSize * 0.55) + 'px ' + PLATE_FONT;
+            ctx.fillText(chars.slice(1).join(''), x + cap * 0.48, y - cap * 0.32);
+            ctx.font = '400 ' + fontSize + 'px ' + PLATE_FONT;
+          }
         }
       }
     }
@@ -574,6 +676,7 @@
     root.querySelectorAll('.wcd-step').forEach(function (s) {
       s.addEventListener('click', function () { setStep(s.dataset.step); });
     });
+    window.addEventListener('resize', showPlate);
     root.querySelectorAll('[data-go]').forEach(function (b) {
       b.addEventListener('click', function () {
         setStep(STEPS[STEPS.indexOf(step) + (b.dataset.go === 'next' ? 1 : -1)]);
@@ -588,6 +691,8 @@
         if (edited && !confirm('Start from this grid? Your current design is replaced.')) return;
         (key === 'empty' ? Promise.resolve(emptyDesign()) : loadExample(key)).then(function (next) {
           replaceDesign(next);
+          // Keep the chosen letter size when switching grids.
+          next.letterSize = design.letterSize;
           lastExample = key;
           openedRevision = null;
           flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.' : 'Grid loaded. Continue with step 2, or change it as you like.');
@@ -608,6 +713,13 @@
     });
 
     // Step 2: letters
+    root.querySelectorAll('[data-letter-size]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        design.letterSize = parseInt(b.dataset.letterSize, 10);
+        changed();
+        render();
+      });
+    });
     var input = $('#wcd-letter');
     input.addEventListener('input', function () {
       if (selectedCell === null) return;

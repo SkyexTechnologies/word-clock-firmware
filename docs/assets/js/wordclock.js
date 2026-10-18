@@ -17,6 +17,9 @@
   'use strict';
 
   var SIZE = 11, LEDS = 121, MAX_PER_WORD = 24, ROWS = 49;
+  // Letter height on the front plate in mm (capital H), as the DXF generator
+  // cuts it; squares are 23.2 mm apart.
+  var LETTER_SIZES = [10, 12, 14, 16], DEFAULT_LETTER_SIZE = 12;
   // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
   var DOT = '.';
 
@@ -46,14 +49,16 @@
     return letters;
   }
 
-  // The grid of a layout file: {name, nextHour, letters, words}. Accepts
+  // The grid of a layout file: {name, nextHour, letters, words, letterSize}
+  // (letterSize null when the file doesn't set it). Accepts
   // format 2, and format 1 from before the 24-letter limit (37 rows of 12,
   // with an optional next_hour_from minute).
   function readLayout(data) {
     if (!data || !Array.isArray(data.words) || (data.words.length !== ROWS && data.words.length !== 37)) {
       throw new Error('This is not a word clock design file.');
     }
-    var d = { name: typeof data.name === 'string' ? data.name : '', letters: blankLetters(), words: blankRows() };
+    var d = { name: typeof data.name === 'string' ? data.name : '', letters: blankLetters(), words: blankRows(),
+      letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null };
     if (Array.isArray(data.next_hour) && data.next_hour.length === 12) {
       d.nextHour = data.next_hour.map(Boolean);
     } else {
@@ -129,6 +134,41 @@
     return (text || '(no words lit)') + (dots ? '  + ' + dots + ' dot' + (dots > 1 ? 's' : '') : '');
   }
 
+  // Sets the letters of a grid (.wcd-grid) to scale with the front plate:
+  // capital height `mm` (letterSize) of the 23.2 mm between squares, in the
+  // plate font (capital height 0.716 em). Measured from the squares
+  // themselves and kept up to date when the grid changes size (window, zoom,
+  // the plate border of step 5).
+  function sizeLetters(grid, mm) {
+    grid.dataset.letterMm = mm;
+    var apply = function () {
+      var cells = grid.children;
+      if (cells.length < 2) return;
+      var pitch = Math.abs(cells[1].getBoundingClientRect().left - cells[0].getBoundingClientRect().left);
+      if (pitch) grid.style.setProperty('--wcd-font', (pitch * grid.dataset.letterMm / (23.2 * 0.716)).toFixed(2) + 'px');
+    };
+    if (!grid.wcSized && window.ResizeObserver) {
+      grid.wcSized = true;
+      new ResizeObserver(apply).observe(grid);
+    }
+    apply();
+  }
+
+  // Puts a square's character in a grid cell (.wcd-cell) as the DXF
+  // generator engraves it: the first character centred, anything after it
+  // (the apostrophe of O') smaller at the upper right (.wcd-accent), so the
+  // O lines up with the letters above and below. A "." is drawn by CSS.
+  function fillCell(el, ch) {
+    var chars = Array.from(ch === DOT ? '' : ch);
+    el.textContent = chars[0] || '';
+    if (chars.length > 1) {
+      var accent = document.createElement('span');
+      accent.className = 'wcd-accent';
+      accent.textContent = chars.slice(1).join('');
+      el.appendChild(accent);
+    }
+  }
+
   // The squares that show a minute dot when they have no letter of their own.
   function minuteDots(d) {
     var dots = new Set();
@@ -138,8 +178,10 @@
 
   window.WordClock = {
     SIZE: SIZE, LEDS: LEDS, MAX_PER_WORD: MAX_PER_WORD, ROWS: ROWS, DOT: DOT,
+    LETTER_SIZES: LETTER_SIZES, DEFAULT_LETTER_SIZE: DEFAULT_LETTER_SIZE,
     led: led, pos: pos, cleanLetter: cleanLetter, blankRows: blankRows, blankLetters: blankLetters,
     nextHourFrom: nextHourFrom, readLayout: readLayout, loadLayout: loadLayout,
-    rowsFor: rowsFor, litLeds: litLeds, wordText: wordText, timeText: timeText, minuteDots: minuteDots
+    rowsFor: rowsFor, litLeds: litLeds, wordText: wordText, timeText: timeText, minuteDots: minuteDots,
+    fillCell: fillCell, sizeLetters: sizeLetters
   };
 })();
