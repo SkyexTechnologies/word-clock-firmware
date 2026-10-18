@@ -35,9 +35,33 @@
   // middle dot for the minute dots.
   function cleanLetter(c) {
     if (typeof c !== 'string') return '';
-    c = c.replace(/·/g, DOT).replace(/’/g, "'");
+    // Without the emoji presentation marks of a pasted ❤️: the plate engraves
+    // the symbol in the plate font.
+    c = stripEmojiMarks(c).replace(/·/g, DOT).replace(/’/g, "'");
     var chars = Array.from(c);
     return chars.length > 1 && chars[1] === "'" ? chars[0] + "'" : (chars[0] || '');
+  }
+
+  // Variation selectors, zero-width joiner and skin tones.
+  var EMOJI_MARKS = /[\uFE0E\uFE0F\u200D]|\uD83C[\uDFFB-\uDFFF]/g;
+
+  function stripEmojiMarks(s) { return s.replace(EMOJI_MARKS, ''); }
+
+  // Symbols a square may hold besides letters and numbers: the designer's
+  // symbol buttons. Shapes in the plate font (Arial Unicode MS) without
+  // thin lines, so the DXF generator can engrave them.
+  var SYMBOLS = [
+    ['❤', 'Heart'], ['★', 'Star'], ['☻', 'Smiley'], ['♪', 'Music note'], ['✈', 'Plane'], ['✿', 'Flower'],
+    ['✓', 'Check mark'], ['✦', 'Sparkle'], ['♣', 'Clover'], ['✚', 'Cross']
+  ];
+
+  // A character a user may type in a square: a letter of any script, a
+  // number, an accent, punctuation, a character from a normal keyboard
+  // (! & - and the like, a space for an empty square) or one of SYMBOLS.
+  // Other symbols and emoji may be missing from the plate font.
+  function isAllowedChar(c) {
+    return /^[\p{L}\p{M}\p{N}\p{P}\x20-\x7E]$/u.test(c) ||
+      SYMBOLS.some(function (s) { return s[0] === c; });
   }
 
   function blankRows() { var r = []; for (var i = 0; i < ROWS; i++) r.push([]); return r; }
@@ -179,7 +203,8 @@
   window.WordClock = {
     SIZE: SIZE, LEDS: LEDS, MAX_PER_WORD: MAX_PER_WORD, ROWS: ROWS, DOT: DOT,
     LETTER_SIZES: LETTER_SIZES, DEFAULT_LETTER_SIZE: DEFAULT_LETTER_SIZE,
-    led: led, pos: pos, cleanLetter: cleanLetter, blankRows: blankRows, blankLetters: blankLetters,
+    led: led, pos: pos, cleanLetter: cleanLetter, stripEmojiMarks: stripEmojiMarks,
+    SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, blankRows: blankRows, blankLetters: blankLetters,
     nextHourFrom: nextHourFrom, readLayout: readLayout, loadLayout: loadLayout,
     rowsFor: rowsFor, litLeds: litLeds, wordText: wordText, timeText: timeText, minuteDots: minuteDots,
     fillCell: fillCell, sizeLetters: sizeLetters

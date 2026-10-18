@@ -724,9 +724,16 @@
     input.addEventListener('input', function () {
       if (selectedCell === null) return;
       var p = pos(selectedCell);
-      var value = input.value.toUpperCase();
+      var value = WC.stripEmojiMarks(input.value).toUpperCase();
       var chars = Array.from(value);
       var last = chars.length ? chars[chars.length - 1] : '';
+      if (last && APOSTROPHES.indexOf(last) === -1 && !WC.isAllowedChar(last)) {
+        // Emoji and other symbols may be missing from the plate font.
+        input.value = design.letters[p.row][p.col];
+        input.select();
+        flash('Only letters, numbers and the symbols below can be used. Click a symbol to add it.');
+        return;
+      }
       if (chars.length === 1 && APOSTROPHES.indexOf(last) !== -1) {
         // An apostrophe joins the previous square's letter: O + ' = O'.
         var index = p.row * SIZE + p.col - 1;
@@ -743,6 +750,26 @@
       design.letters[p.row][p.col] = chars.length === 2 && APOSTROPHES.indexOf(last) !== -1 ? cleanLetter(value) : cleanLetter(last);
       changed();
       if (chars.length) moveCell(1); else render();
+    });
+    // Symbols the plate font can engrave (WordClock.SYMBOLS).
+    var symbols = $('#wcd-symbols');
+    WC.SYMBOLS.forEach(function (s) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wcd-chip';
+      b.dataset.symbol = s[0];
+      b.textContent = s[0];
+      b.setAttribute('aria-label', s[1]);
+      symbols.appendChild(b);
+    });
+    root.querySelectorAll('[data-symbol]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (selectedCell === null) { flash('First click a square in the grid.'); return; }
+        var p = pos(selectedCell);
+        design.letters[p.row][p.col] = b.dataset.symbol;
+        changed();
+        moveCell(1);
+      });
     });
     input.addEventListener('keydown', function (e) {
       if (selectedCell === null) return;

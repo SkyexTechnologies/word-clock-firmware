@@ -483,6 +483,14 @@ figure.highlight {
     border-radius: 6px;
   }
 
+  // The symbol buttons in the plate font, so they look as engraved.
+  .wcd-symbols .wcd-chip {
+    min-width: 2.25rem;
+    font-family: $wcd-plate-font;
+    font-feature-settings: normal;
+    font-size: 1.1rem;
+  }
+
   .wcd-letter {
     max-width: 4rem;
     text-align: center;
