@@ -77,7 +77,8 @@ or in Home Assistant.
 - Time in words to the nearest five minutes, with four minute dots for the
   minutes in between.
 - Letter for the day of the week.
-- Automatic brightness from the built-in light sensor, or a fixed brightness.
+- Automatic brightness from the built-in light sensor (if your clock has
+  one), or a fixed brightness.
 - Smooth fade between times.
 - Any colour, set from the web page or Home Assistant.
 - Time from an internet time server, or from Home Assistant if you use it,

@@ -48,7 +48,7 @@ instead. Add a bookmark, so you can find it again later.
 ![The clock's web page with its settings, update buttons and information]({{ '/images/web-page.png' | relative_url }}){: .screenshot }
 
 The clock uses Amsterdam time unless Home Assistant sets another time zone.
-Live elsewhere? Choose your region under **06. Time Zone**. See
+Live elsewhere? Choose your region under **03. Time Zone**. See
 [Settings](settings.html) for what each setting does.
 
 ## 4. Optional: Home Assistant

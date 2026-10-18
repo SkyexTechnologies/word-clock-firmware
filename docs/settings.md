@@ -12,9 +12,9 @@ are saved on the clock and kept after a power cut.
 | --- | --- |
 | **01. Word Clock** | Switch the clock on or off, and set its colour and brightness (at least 20%). |
 | **02. Transition** | How long the fade between two times takes, from 0 to 10 seconds. |
-| **03. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
-| **04. Minimum Brightness** / **05. Maximum Brightness** | The range used by automatic brightness, from 0.2 (20%) to 1 (100%). |
-| **06. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
+| **03. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
+| **04. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
+| **05. Minimum Brightness** / **06. Maximum Brightness** | The range used by automatic brightness, from 0.2 (20%) to 1 (100%). |
 | **Indication: It is** | Show or hide the opening words, such as "IT IS". |
 | **Indication: Minutes** | Show or hide the four minute dots. |
 | **Indication: Week Days** | Show or hide the letter for the day of the week. |
@@ -31,20 +31,24 @@ device page:
 
 ## Setting up automatic brightness
 
-With **03. Automatic Brightness** on, the clock adjusts its brightness to the
+With **04. Automatic Brightness** on, the clock adjusts its brightness to the
 light in the room. It is dimmest in the dark and brightest in bright light,
 and fades smoothly in between. You choose both ends; the clock does the rest.
+
+A clock without a light sensor doesn't show **04. Automatic Brightness**,
+**05. Minimum Brightness** and **06. Maximum Brightness**. Set its brightness
+under **01. Word Clock**.
 
 Use the web page on your phone, so you can watch the clock while you adjust
 it. Each change shows on the clock within a second.
 
-1. Check that **03. Automatic Brightness** is on.
+1. Check that **04. Automatic Brightness** is on.
 2. **In the dark.** In the evening, switch off the lights so the room is as
    dark as it usually gets, and wait 15 seconds. Lower or raise
-   **04. Minimum Brightness** until the words are easy to read but don't
+   **05. Minimum Brightness** until the words are easy to read but don't
    light up the room.
 3. **In bright light.** During the day, when the room is at its brightest
-   (or with all lights on), wait 15 seconds. Set **05. Maximum Brightness**
+   (or with all lights on), wait 15 seconds. Set **06. Maximum Brightness**
    so the time is easy to read without being glaring.
 
 That's it. The clock measures the light every 15 seconds and fades to the new
@@ -54,12 +58,12 @@ it jump.
 {: .note }
 > - The clock never goes below 20% brightness. Dimmer than that, the LEDs
 >   can't show colours accurately anymore: orange, for example, would turn red.
-> - Too bright at night? Lower **04. Minimum Brightness**. Too dim during the
->   day? Raise **05. Maximum Brightness**.
+> - Too bright at night? Lower **05. Minimum Brightness**. Too dim during the
+>   day? Raise **06. Maximum Brightness**.
 > - The maximum can't be lower than the minimum: if you set one past the
 >   other, the other follows.
 > - With automatic brightness on, the clock ignores the brightness of
->   **01. Word Clock**. Switch **03. Automatic Brightness** off to set a fixed
+>   **01. Word Clock**. Switch **04. Automatic Brightness** off to set a fixed
 >   brightness there instead.
 
 ## Time zones

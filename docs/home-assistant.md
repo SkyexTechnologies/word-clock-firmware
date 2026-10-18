@@ -44,7 +44,7 @@ The clock then has its own device page with all its settings (see
 
 Home Assistant sends the clock the time and its time zone. Home Assistant
 2026.3 or newer is needed for the time zone. With an older version, choose the
-time zone on the clock under **06. Time Zone**.
+time zone on the clock under **03. Time Zone**.
 
 ## Removing the clock or giving it away
 

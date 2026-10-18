@@ -79,7 +79,7 @@
 
   /* ---------- import and export ---------- */
 
-  // A design file: the grid (see WordClock.readLayout) plus the customer's
+  // A design file: the grid (see WordClock.readLayout) plus the user's
   // details and the layout revision.
   function importDesign(data) {
     var d = WC.readLayout(data);
@@ -389,8 +389,8 @@
     return (design.order ? 'order-' + slug(design.order) + '-' : '') + 'word-clock-design-r' + design.layoutRevision + '.json';
   }
 
-  // Download and email only with the customer's details, and once the
-  // customer confirms the design is final.
+  // Download and email only with the user's details, and once the
+  // user confirms the design is final.
   function validEmail(text) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text); }
 
   function missingDetail() {
@@ -543,7 +543,7 @@
   }
 
   function replaceDesign(next) {
-    // Keep the customer's name and order number when switching grids.
+    // Keep the user's name and order number when switching grids.
     next.customer = next.customer || design.customer;
     next.order = next.order || design.order;
     next.email = next.email || design.email;

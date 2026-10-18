@@ -60,7 +60,7 @@ We can't give you a clock's key: only the Home Assistant that set it knows it.
 
 ## The time is off by one or more hours
 
-Check **06. Time Zone** under [Settings](settings.html). Without Home
+Check **03. Time Zone** under [Settings](settings.html). Without Home
 Assistant the clock uses Amsterdam time; choose your region there if you live
 elsewhere. With Home Assistant and *Home Assistant (otherwise Amsterdam)*,
 check the time zone in Home Assistant under **Settings → System → General**.
