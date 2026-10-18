@@ -1,7 +1,11 @@
-# Publishes the documentation and the firmware of the latest release to
-# GitHub Pages. Clocks check firmware/word-clock.manifest.json there for
-# updates, so this runs when a release is published or a pre-release is marked
-# as a release (through redispatch below), and when the documentation changes.
+# Publishes the documentation and the released firmware to GitHub Pages.
+# Clocks check an update manifest in firmware/ there (word-clock-<line>-hw<n>
+# .manifest.json; word-clock.manifest.json for firmware up to 1.5.0).
+# update-manifests.json says which release each manifest offers: "latest"
+# (the newest full release) or a fixed tag, so older clocks can be kept on a
+# release that suits them. This runs when a release is published or a
+# pre-release is marked as a release (through redispatch below), and when the
+# documentation or update-manifests.json changes.
 
 name: Publish docs and firmware
 
@@ -11,6 +15,7 @@ on:
       - main
     paths:
       - "docs/**"
+      - "update-manifests.json"
       - ".github/workflows/pages.yml"
   release:
     types: [released]
@@ -66,30 +71,42 @@ jobs:
         env:
           JEKYLL_ENV: production
 
-      # Pre-releases are skipped: "latest" is the newest full release.
-      - name: Download the latest release
-        id: firmware
-        uses: robinraju/release-downloader@v1
-        continue-on-error: true
-        with:
-          latest: true
-          fileName: "*"
-          out-file-path: _site/firmware
-
-      # Never replace the published firmware with an incomplete release.
-      - name: Check the firmware
+      # Each release goes to firmware/<tag>/; each manifest is that release's
+      # word-clock.manifest.json with its file paths pointing there. Never
+      # publish a manifest without its firmware.
+      - name: Publish the update manifests
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          if [ -f _site/firmware/word-clock.manifest.json ]; then
-            cat _site/firmware/word-clock.manifest.json
-          elif gh api "repos/$GH_REPO/releases/latest" > /dev/null 2>&1; then
-            echo "::error::The latest release has no word-clock.manifest.json; not publishing"
-            exit 1
-          else
+          set -euo pipefail
+          # Pre-releases are skipped: "latest" is the newest full release.
+          latest=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name 2> /dev/null || true)
+          if [ -z "$latest" ]; then
             echo "::warning::No released firmware yet; clocks will report the update server as unreachable."
+            exit 0
           fi
+          list=update-manifests.json
+          if [ ! -f "$list" ]; then
+            echo "::warning::No update-manifests.json; publishing only word-clock.manifest.json"
+            list=$RUNNER_TEMP/update-manifests.json
+            echo '{"manifests": {"word-clock.manifest.json": "latest"}}' > "$list"
+          fi
+          mkdir -p _site/firmware
+          while read -r name tag; do
+            [ "$tag" = latest ] && tag=$latest
+            dir=_site/firmware/$tag
+            [ -d "$dir" ] || gh release download "$tag" --dir "$dir"
+            if [ ! -f "$dir/word-clock.manifest.json" ]; then
+              echo "::error::Release $tag has no word-clock.manifest.json; not publishing"
+              exit 1
+            fi
+            jq --arg d "$tag/" '.builds |= map(
+                .ota.path = $d + .ota.path
+                | if .parts then .parts |= map(.path = $d + .path) else . end)' \
+              "$dir/word-clock.manifest.json" > "_site/firmware/$name"
+            echo "$name: $tag"
+          done < <(jq -r '.manifests | to_entries[] | "\(.key) \(.value)"' "$list")
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
