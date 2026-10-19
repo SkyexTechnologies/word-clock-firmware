@@ -82,7 +82,7 @@ or in Home Assistant.
 - Letter for the day of the week.
 - Automatic brightness from the built-in light sensor (if your clock has
   one), or a fixed brightness.
-- Smooth fade between times.
+- Smooth transitions between times: fade, crossfade, typewriter or sweep.
 - Any colour, set from the web page or Home Assistant.
 - Time from an internet time server, or from Home Assistant if you use it,
   with automatic daylight saving time.

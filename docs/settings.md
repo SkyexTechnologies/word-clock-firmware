@@ -11,7 +11,8 @@ are saved on the clock and kept after a power cut.
 | Setting | What it does |
 | --- | --- |
 | **01. Word Clock** | Switch the clock on or off, and set its colour and brightness (at least 20%). |
-| **02. Transition** | How long the fade between two times takes, from 0 to 10 seconds. |
+| **02. Transition Effect** | How the words change every five minutes. *Fade*: the old words fade out, then the new ones fade in. *Crossfade*: both at the same time. *Typewriter*: the old letters disappear one by one, then the new ones appear in reading order. *Sweep*: the new time slides in from left to right. |
+| **02. Transition Time** | How long that change takes, from 0 to 10 seconds. At 0 the words change at once. |
 | **03. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
 | **04. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
 | **05. Minimum Brightness** / **06. Maximum Brightness** | The range used by automatic brightness, from 0.2 (20%) to 1 (100%). |
