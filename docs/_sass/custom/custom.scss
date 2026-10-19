@@ -765,3 +765,22 @@ figure.highlight {
   }
 }
 
+
+// Examples page (examples.md, assets/js/examples.js): a gallery of small
+// clocks with a caption each.
+.wcx-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.5rem 1.25rem;
+  margin: 1.5rem 0;
+
+  .wcx { margin: 0; }
+  .wcx-clock { margin: 0 0 0.6rem; }
+  figcaption {
+    font-size: 0.9rem;
+    color: $body-text-color;
+    strong { display: block; color: $body-heading-color; }
+  }
+  // Symbols in a caption, as text rather than colour emoji on phones.
+  .wcx-symbols { font-family: "Arial Unicode MS", Arial, "Word Clock Symbols", sans-serif; }
+}

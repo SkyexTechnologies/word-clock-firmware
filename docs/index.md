@@ -76,6 +76,8 @@ or in Home Assistant.
 | Change the colour, brightness or time zone | [Settings](settings.html) |
 | Install a firmware update | [Updating the firmware](updating.html) |
 | Solve a problem | [Troubleshooting](troubleshooting.html) |
+| See what's possible | [Examples](examples.html) |
+| Design my own letter grid | [Design your own](design-your-own.html) |
 
 ## Features
 
