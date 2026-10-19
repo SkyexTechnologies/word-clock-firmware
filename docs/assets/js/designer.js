@@ -442,7 +442,9 @@
       var input = $('#wcd-letter');
       input.value = design.letters[p.row][p.col];
       $('#wcd-letter-pos').textContent = 'Row ' + (p.row + 1) + ', column ' + (p.col + 1);
-      input.focus();
+      // Without scrolling: the field may be below the grid, and the page
+      // would jump to it at every square.
+      input.focus({ preventScroll: true });
       input.select();
     } else if (step === 'words') {
       if (selectedPhrase === null) { flash('First choose a phrase from the list.'); return; }

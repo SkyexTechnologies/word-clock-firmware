@@ -59,13 +59,12 @@ while you design.
         <h3 class="wcd-title">2. Type the letters</h3>
         <p>Click a square in the grid and type its letter. The cursor moves on to
         the next square by itself; the arrow keys move it too.</p>
-        <ul class="wcd-tips">
-          <li>Type <kbd>.</kbd> for a minute dot.</li>
-          <li>Type an apostrophe right after a letter to put both in one square,
-          like the O' in O'CLOCK.</li>
-          <li>Squares you don't need for the time can hold anything: a name, a
-          message, random letters or a symbol from the row below.</li>
-        </ul>
+        <label class="wcd-label" for="wcd-letter">Letter</label>
+        <input type="text" id="wcd-letter" class="wcd-input wcd-letter" autocomplete="off" autocapitalize="characters">
+        <p class="wcd-muted" id="wcd-letter-pos">Choose a square in the grid.</p>
+        <span class="wcd-label">Symbols</span>
+        <div class="wcd-chips wcd-symbols" id="wcd-symbols" role="group" aria-label="Symbols"></div>
+        <p class="wcd-muted">Other symbols and emoji can't be engraved; these can.</p>
         <span class="wcd-label">Letter size on your clock</span>
         <div class="wcd-chips" role="group" aria-label="Letter size on your clock">
           <button type="button" class="wcd-chip" data-letter-size="10">Extra small (10 mm)</button>
@@ -75,12 +74,13 @@ while you design.
         </div>
         <p class="wcd-muted">The grid shows the letters at this size, in the font of the front plate.</p>
         <p class="wcd-attach" id="wcd-size-warning" role="status" hidden></p>
-        <label class="wcd-label" for="wcd-letter">Letter</label>
-        <input type="text" id="wcd-letter" class="wcd-input wcd-letter" autocomplete="off" autocapitalize="characters">
-        <p class="wcd-muted" id="wcd-letter-pos">Choose a square in the grid.</p>
-        <span class="wcd-label">Symbols</span>
-        <div class="wcd-chips wcd-symbols" id="wcd-symbols" role="group" aria-label="Symbols"></div>
-        <p class="wcd-muted">Other symbols and emoji can't be engraved; these can.</p>
+        <ul class="wcd-tips">
+          <li>Type <kbd>.</kbd> for a minute dot.</li>
+          <li>Type an apostrophe right after a letter to put both in one square,
+          like the O' in O'CLOCK.</li>
+          <li>Squares you don't need for the time can hold anything: a name, a
+          message, random letters or a symbol from the row above.</li>
+        </ul>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><button type="button" class="btn btn-primary" data-go="next">Next: words</button></div>
       </div>
 
