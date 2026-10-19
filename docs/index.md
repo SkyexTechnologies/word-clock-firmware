@@ -34,6 +34,7 @@ or in Home Assistant.
 <div id="wcl" class="wcd wcl" data-layouts="{{ '/layouts/' | relative_url }}">
   <div class="wcd-chips wcl-langs" role="group" aria-label="Language of the letter grid">
     <button type="button" class="wcd-chip" data-lang="english" lang="en">English</button>
+    <button type="button" class="wcd-chip" data-lang="english-fun" lang="en">English (fun)</button>
     <button type="button" class="wcd-chip" data-lang="german" lang="de">Deutsch</button>
     <button type="button" class="wcd-chip" data-lang="french" lang="fr">Français</button>
     <button type="button" class="wcd-chip" data-lang="spanish" lang="es">Español</button>
@@ -59,6 +60,7 @@ or in Home Assistant.
   </div>
   <div class="wcd-grid wcl-grid" id="wcl-grid" role="img" aria-label="The word clock at the current time"></div>
   <p class="wcl-says">Right now (<span id="wcl-time"></span>) it says: <strong id="wcl-text"></strong></p>
+  <p class="wcl-fun" id="wcl-fun" role="status" hidden></p>
   <ul class="wcl-explain" id="wcl-explain"></ul>
 </div>
 
@@ -82,6 +84,8 @@ or in Home Assistant.
 - Letter for the day of the week.
 - Special words: a hidden name or message that lights up on its own dates,
   such as a birthday.
+- Fun phrases instead of the time at moments you choose, like IT IS BEER
+  O'CLOCK on Friday afternoon.
 - Automatic brightness from the built-in light sensor (if your clock has
   one), or a fixed brightness.
 - Smooth transitions between times: fade, crossfade, typewriter or sweep.

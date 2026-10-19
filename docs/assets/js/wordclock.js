@@ -23,6 +23,9 @@
   // Special words: hidden words lit on their dates ("MM-DD"), as in the
   // firmware (MAX_SPECIAL_WORDS, MAX_SPECIAL_DATES).
   var SPECIAL_WORDS = 4, SPECIAL_DATES = 4;
+  // Fun phrases: shown instead of the time words on some days ("sun" ...)
+  // from "HH:MM" to "HH:MM", as in the firmware (MAX_FUN_PHRASES).
+  var FUN_PHRASES = 4, DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
   // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
   var DOT = '.';
 
@@ -79,6 +82,30 @@
     return a;
   }
 
+  function blankFun() {
+    var a = [];
+    for (var i = 0; i < FUN_PHRASES; i++) a.push({ leds: [], days: [false, false, false, false, false, false, false], from: '', to: '' });
+    return a;
+  }
+
+  // Minutes after midnight of "HH:MM", or null.
+  function minutesOf(t) {
+    var m = /^(\d\d):(\d\d)$/.exec(t || '');
+    return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null;
+  }
+
+  // The fun phrase shown at this time and day (0 = Sunday), or -1: the first
+  // with letters whose day and window match (a window may run past midnight).
+  function funNow(d, hour, minute, day) {
+    var fun = d.fun || [];
+    for (var i = 0; i < fun.length; i++) {
+      var f = fun[i], from = minutesOf(f.from), to = minutesOf(f.to);
+      if (!f.leds.length || from === null || to === null || from === to || !f.days[day]) continue;
+      if ((hour * 60 + minute - from + 1440) % 1440 < (to - from + 1440) % 1440) return i;
+    }
+    return -1;
+  }
+
   // "MM-DD" for a real day of the year, otherwise null.
   function dateKey(month, day) {
     if (!(month >= 1 && month <= 12 && day >= 1 && day <= new Date(2024, month, 0).getDate())) return null;
@@ -113,7 +140,17 @@
       throw new Error('This is not a word clock design file.');
     }
     var d = { name: typeof data.name === 'string' ? data.name : '', letters: blankLetters(), words: blankRows(),
-      letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null, special: blankSpecial() };
+      letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null, special: blankSpecial(),
+      fun: blankFun() };
+    if (Array.isArray(data.fun_phrases)) {
+      data.fun_phrases.slice(0, FUN_PHRASES).forEach(function (f, i) {
+        if (!f) return;
+        d.fun[i].leds = (Array.isArray(f.leds) ? f.leds : []).filter(function (l) { return l >= 0 && l < LEDS; }).slice(0, MAX_PER_WORD);
+        d.fun[i].days = DAY_KEYS.map(function (k) { return Array.isArray(f.days) && f.days.indexOf(k) !== -1; });
+        d.fun[i].from = minutesOf(f.from) !== null ? f.from : '';
+        d.fun[i].to = minutesOf(f.to) !== null ? f.to : '';
+      });
+    }
     if (Array.isArray(data.special_words)) {
       data.special_words.slice(0, SPECIAL_WORDS).forEach(function (s, i) {
         if (!s) return;
@@ -161,10 +198,12 @@
     return [0, 1 + phrase, hourRow];
   }
 
-  // All LEDs lit at a time and day (0 = Sunday), with weekday and dots.
+  // All LEDs lit at a time and day (0 = Sunday), with weekday and dots. A
+  // fun phrase in its window replaces the time words.
   function litLeds(d, hour, minute, day) {
-    var lit = new Set();
-    rowsFor(d, hour, minute).concat([25 + day, 32 + (minute % 5)]).forEach(function (r) {
+    var lit = new Set(), fun = funNow(d, hour, minute, day);
+    if (fun >= 0) d.fun[fun].leds.forEach(function (l) { lit.add(l); });
+    (fun >= 0 ? [] : rowsFor(d, hour, minute)).concat([25 + day, 32 + (minute % 5)]).forEach(function (r) {
       d.words[r].forEach(function (l) { lit.add(l); });
     });
     return lit;
@@ -190,10 +229,12 @@
     return text;
   }
 
-  // What the clock says, e.g. "IT IS TWENTY PAST TWO  + 3 dots".
-  function timeText(d, hour, minute) {
-    var leds = [];
-    rowsFor(d, hour, minute).forEach(function (r) { leds = leds.concat(d.words[r]); });
+  // What the clock says, e.g. "IT IS TWENTY PAST TWO  + 3 dots"; with the
+  // day (0 = Sunday), a fun phrase in its window instead.
+  function timeText(d, hour, minute, day) {
+    var leds = [], fun = day === undefined ? -1 : funNow(d, hour, minute, day);
+    if (fun >= 0) leds = d.fun[fun].leds.slice();
+    else rowsFor(d, hour, minute).forEach(function (r) { leds = leds.concat(d.words[r]); });
     var text = wordText(d, leds.filter(function (l, i) { return leds.indexOf(l) === i; }));
     var dots = minute % 5;
     return (text || '(no words lit)') + (dots ? '  + ' + dots + ' dot' + (dots > 1 ? 's' : '') : '');
@@ -245,6 +286,7 @@
     SIZE: SIZE, LEDS: LEDS, MAX_PER_WORD: MAX_PER_WORD, ROWS: ROWS, DOT: DOT,
     LETTER_SIZES: LETTER_SIZES, DEFAULT_LETTER_SIZE: DEFAULT_LETTER_SIZE,
     SPECIAL_WORDS: SPECIAL_WORDS, SPECIAL_DATES: SPECIAL_DATES, blankSpecial: blankSpecial, dateKey: dateKey,
+    FUN_PHRASES: FUN_PHRASES, DAY_KEYS: DAY_KEYS, blankFun: blankFun, minutesOf: minutesOf, funNow: funNow,
     specialLeds: specialLeds,
     led: led, pos: pos, cleanLetter: cleanLetter, stripEmojiMarks: stripEmojiMarks,
     SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, textStyle: textStyle, blankRows: blankRows, blankLetters: blankLetters,

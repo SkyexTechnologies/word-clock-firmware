@@ -72,11 +72,28 @@
   var SPECIAL_ROW = 100;
   for (n = 0; n < WC.SPECIAL_WORDS; n++) {
     PHRASES.push({ group: 'Special words (optional)', label: 'Special word ' + (n + 1),
-      hint: 'lit on its dates, e.g. a name on a birthday', row: SPECIAL_ROW + n, special: n, optional: true });
+      row: SPECIAL_ROW + n, special: n, optional: true });
   }
 
-  // The LEDs of a phrase row, special words included.
-  function rowLeds(row) { return row >= SPECIAL_ROW ? design.special[row - SPECIAL_ROW].leds : design.words[row]; }
+  // Fun phrases: rows from FUN_ROW on stand for design.fun[i].
+  var FUN_ROW = 200;
+  for (n = 0; n < WC.FUN_PHRASES; n++) {
+    PHRASES.push({ group: 'Fun phrases (optional)', label: 'Fun phrase ' + (n + 1),
+      row: FUN_ROW + n, fun: n, optional: true });
+  }
+
+  // Step 3 tab of a phrase: time words, days and dots, special words, fun.
+  function tabOf(ph) {
+    if (ph.fun !== undefined) return 'fun';
+    if (ph.special !== undefined) return 'special';
+    return ph.row >= 25 && ph.row <= 36 ? 'extras' : 'time';
+  }
+
+  // The LEDs of a phrase row, special words and fun phrases included.
+  function rowLeds(row) {
+    if (row >= FUN_ROW) return design.fun[row - FUN_ROW].leds;
+    return row >= SPECIAL_ROW ? design.special[row - SPECIAL_ROW].leds : design.words[row];
+  }
 
   // Quick choices for the next-hour marks: first minute phrase that names the
   // next hour.
@@ -86,7 +103,8 @@
 
   function emptyDesign() {
     return { name: '', customer: '', email: '', order: '', clock: 1, layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
-      letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows(), special: WC.blankSpecial() };
+      letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows(), special: WC.blankSpecial(),
+      fun: WC.blankFun() };
   }
 
   function loadExample(key) {
@@ -138,6 +156,11 @@
       special_words: design.special.filter(function (sw) { return sw.leds.length; }).map(function (sw) {
         return { leds: sw.leds.slice().sort(function (a, b) { return a - b; }), dates: sw.dates.slice() };
       }),
+      // Shown instead of the time words on their days, from-to ("HH:MM").
+      fun_phrases: design.fun.filter(function (f) { return f.leds.length; }).map(function (f) {
+        return { leds: f.leds.slice().sort(function (a, b) { return a - b; }),
+          days: WC.DAY_KEYS.filter(function (k, i) { return f.days[i]; }), from: f.from, to: f.to };
+      }),
       // Squares lit as minute dots without a letter of their own get a ".",
       // so the DXF generator engraves a dot there.
       letters: design.letters.map(function (row, r) {
@@ -167,6 +190,9 @@
       '"letter_size": ' + d.letter_size
     ], d.special_words.length ? ['"special_words": [\n' + d.special_words.map(function (sw) {
       return '    {"leds": ' + list(sw.leds) + ', "dates": ' + list(sw.dates) + '}';
+    }).join(',\n') + '\n  ]'] : [], d.fun_phrases.length ? ['"fun_phrases": [\n' + d.fun_phrases.map(function (f) {
+      return '    {"leds": ' + list(f.leds) + ', "days": ' + list(f.days) + ', "from": ' + JSON.stringify(f.from) +
+        ', "to": ' + JSON.stringify(f.to) + '}';
     }).join(',\n') + '\n  ]'] : [], [
       '"letters": ' + rows(d.letters)
     ]).map(function (line) { return '  ' + line; }).join(',\n') + '\n}\n';
@@ -205,14 +231,17 @@
   var stored = load();
   var design = stored || emptyDesign();
   var edited = !!stored;
-  var step = 'start', selectedPhrase = null, selectedCell = null, currentDay = 3, previewSpecial = false;
+  // previewSpecial: the special word lit in step 4 (its button), or -1;
+  // wordsTab: the tab shown in step 3.
+  var wordsTab = 'time';
+  var step = 'start', selectedPhrase = null, selectedCell = null, currentDay = 3, previewSpecial = -1;
   var root, gridEl;
 
   /* ---------- clock logic (same rules as the firmware) ---------- */
   function rowsFor(hour, minute) { return WC.rowsFor(design, hour, minute); }
   function litLeds(hour, minute, day) { return WC.litLeds(design, hour, minute, day); }
   function wordText(leds) { return WC.wordText(design, leds); }
-  function timeText(hour, minute) { return WC.timeText(design, hour, minute); }
+  function timeText(hour, minute, day) { return WC.timeText(design, hour, minute, day); }
 
   /* ---------- rendering ---------- */
   function $(sel) { return root.querySelector(sel); }
@@ -293,8 +322,8 @@
   function render() {
     var lit = new Set(), inPhrase = new Set(), used = new Set();
     var now = new Date();
-    // Special words lit: today's on the start step, all of them in step 4
-    // with "Special day" on. They pulse, as on the clock.
+    // Special words lit: today's on the start step, the one whose button is
+    // on in step 4. They pulse, as on the clock.
     var special = new Set();
     if (step === 'start') {
       lit = litLeds(now.getHours(), now.getMinutes(), now.getDay());
@@ -303,12 +332,13 @@
     if (step === 'check') {
       var t = previewTime();
       lit = litLeds(t.hour, t.minute, currentDay);
-      if (previewSpecial) special = WC.specialLeds(design, true);
+      if (previewSpecial >= 0 && design.special[previewSpecial]) special = new Set(design.special[previewSpecial].leds);
     }
     special.forEach(function (l) { if (!lit.has(l)) lit.add(l); else special.delete(l); });
     if (step === 'words') {
       design.words.forEach(function (w) { w.forEach(function (l) { used.add(l); }); });
       design.special.forEach(function (sw) { sw.leds.forEach(function (l) { used.add(l); }); });
+      design.fun.forEach(function (f) { f.leds.forEach(function (l) { used.add(l); }); });
       if (selectedPhrase !== null) rowLeds(selectedPhrase).forEach(function (l) { inPhrase.add(l); });
     }
     var minuteLeds = new Set();
@@ -339,12 +369,16 @@
     });
     if (step === 'start') {
       $('#wcd-start-time').textContent = clock(now.getHours(), now.getMinutes());
-      $('#wcd-start-shows').textContent = timeText(now.getHours(), now.getMinutes());
+      $('#wcd-start-shows').textContent = timeText(now.getHours(), now.getMinutes(), now.getDay());
     }
     if (step === 'words') renderPhraseList();
-    if (step === 'check') { $('#wcd-phrase').textContent = timeText(previewTime().hour, previewTime().minute); renderCheck('#wcd-check'); }
+    if (step === 'check') {
+      $('#wcd-phrase').textContent = timeText(previewTime().hour, previewTime().minute, currentDay);
+      renderCheck('#wcd-check');
+      renderFunChips();
+      renderSpecialChips();
+    }
     if (step === 'send') {
-      $('#wcd-ha-special').hidden = !design.special.some(function (sw) { return sw.leds.length; });
       renderCheck('#wcd-send-check');
       $('#wcd-revision').textContent = design.layoutRevision;
     }
@@ -354,7 +388,17 @@
     var list = $('#wcd-phrases');
     list.innerHTML = '';
     var group = null;
+    root.querySelectorAll('.wcd-tab').forEach(function (t) {
+      var on = t.dataset.tab === wordsTab;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-selected', String(on));
+      // How many of its phrases have letters, for the extra tabs.
+      var filled = PHRASES.filter(function (ph) { return tabOf(ph) === t.dataset.tab && rowLeds(ph.row).length; }).length;
+      t.dataset.count = t.dataset.tab === 'special' || t.dataset.tab === 'fun' ? (filled || '') : '';
+    });
+    root.querySelectorAll('[data-tab-text]').forEach(function (p) { p.hidden = p.dataset.tabText !== wordsTab; });
     PHRASES.forEach(function (ph) {
+      if (tabOf(ph) !== wordsTab) return;
       if (ph.group !== group) {
         group = ph.group;
         var heading = document.createElement('div');
@@ -364,7 +408,8 @@
       }
       var leds = rowLeds(ph.row);
       var item = document.createElement('div');
-      item.className = 'wcd-phrase' + (ph.row === selectedPhrase ? ' is-active' : '') + (ph.optional ? ' is-optional' : '');
+      item.className = 'wcd-phrase' + (ph.row === selectedPhrase ? ' is-active' : '') + (ph.optional ? ' is-optional' : '') +
+        (ph.special !== undefined || ph.fun !== undefined ? ' has-details' : '');
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'wcd-phrase-main';
@@ -393,6 +438,7 @@
         item.appendChild(label);
       }
       if (ph.special !== undefined) item.appendChild(specialDates(ph.special));
+      if (ph.fun !== undefined) item.appendChild(funWhen(ph.fun));
       list.appendChild(item);
     });
     var current = PHRASES.filter(function (p) { return p.row === selectedPhrase; })[0];
@@ -427,6 +473,82 @@
     return input;
   }
 
+  // Days and time window of fun phrase i.
+  function funWhen(i) {
+    var f = design.fun[i], box = document.createElement('div');
+    box.className = 'wcd-fun-when';
+    var days = document.createElement('div');
+    days.className = 'wcd-fun-days';
+    [1, 2, 3, 4, 5, 6, 0].forEach(function (d) {
+      var label = document.createElement('label'), check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = f.days[d];
+      check.addEventListener('change', function () { f.days[d] = check.checked; changed(); render(); });
+      label.appendChild(check);
+      label.appendChild(document.createTextNode(' ' + DAYS[d].slice(0, 2)));
+      days.appendChild(label);
+    });
+    box.appendChild(days);
+    ['from', 'to'].forEach(function (key) {
+      var label = document.createElement('label'), input = document.createElement('input');
+      input.type = 'time';
+      input.className = 'wcd-input wcd-fun-time';
+      input.value = f[key];
+      input.addEventListener('change', function () { f[key] = input.value; changed(); render(); });
+      label.appendChild(document.createTextNode(key === 'from' ? 'From ' : ' to '));
+      label.appendChild(input);
+      box.appendChild(label);
+    });
+    return box;
+  }
+
+  // Step 4: a chip per special word that lights it (and again: off).
+  function renderSpecialChips() {
+    var box = $('#wcd-special-chips'), any = false;
+    box.innerHTML = '';
+    design.special.forEach(function (sw, i) {
+      if (!sw.leds.length || !sw.dates.length) return;
+      any = true;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wcd-chip' + (previewSpecial === i ? ' is-active' : '');
+      b.setAttribute('aria-pressed', String(previewSpecial === i));
+      var first = sw.dates[0];
+      b.textContent = wordText(sw.leds) + ' (' + first.slice(3) + '-' + first.slice(0, 2) + (sw.dates.length > 1 ? ', …' : '') + ')';
+      b.addEventListener('click', function () {
+        previewSpecial = previewSpecial === i ? -1 : i;
+        render();
+      });
+      box.appendChild(b);
+    });
+    $('#wcd-special-try').hidden = !any;
+  }
+
+  // Step 4: a chip per fun phrase that sets the day and time to its start.
+  function renderFunChips() {
+    var box = $('#wcd-fun-chips'), any = false;
+    box.innerHTML = '';
+    design.fun.forEach(function (f) {
+      var day = f.days.indexOf(true);
+      if (!f.leds.length || day === -1 || !f.from || !f.to) return;
+      any = true;
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'wcd-chip';
+      b.textContent = wordText(f.leds).replace(/^IT IS /, '') + ' (' + DAYS[day].slice(0, 3) + ' ' + f.from + ')';
+      b.addEventListener('click', function () {
+        currentDay = day;
+        $('#wcd-time').value = f.from;
+        root.querySelectorAll('#wcd-days button').forEach(function (x, i) {
+          x.classList.toggle('is-active', [1, 2, 3, 4, 5, 6, 0][i] === day);
+        });
+        render();
+      });
+      box.appendChild(b);
+    });
+    $('#wcd-fun-try').hidden = !any;
+  }
+
   function syncRule() {
     var match = 'custom';
     Object.keys(RULES).forEach(function (k) {
@@ -447,6 +569,12 @@
     design.special.forEach(function (sw, i) {
       if (sw.leds.length && !sw.dates.length) list.push('Special word ' + (i + 1) + ' has letters but no date.');
       if (!sw.leds.length && sw.dates.length) list.push('Special word ' + (i + 1) + ' has dates but no letters.');
+    });
+    design.fun.forEach(function (f, i) {
+      if (!f.leds.length) return;
+      if (!f.days.some(Boolean)) list.push('Fun phrase ' + (i + 1) + ' has no days.');
+      if (!f.from || !f.to) list.push('Fun phrase ' + (i + 1) + ' needs a start and end time.');
+      else if (f.from === f.to) list.push('Fun phrase ' + (i + 1) + ' starts and ends at the same time.');
     });
     return list;
   }
@@ -646,10 +774,11 @@
       '  has_minutes: ' + d.indications.minutes + '\n' +
       '  has_weekdays: ' + d.indications.weekdays + '\n' +
       '  next_hour_mask: ' + mask + '\n' +
-      '  layout_revision: ' + d.layout_revision + '\n';
+      '  layout_revision: ' + d.layout_revision + '\n' +
+      specialAction() + funAction();
   }
 
-  // The special words as a second action (firmware 1.9.0 and later).
+  // The special words' lines of the action.
   function specialAction() {
     var leds = [], dates = [];
     design.special.forEach(function (sw) {
@@ -659,14 +788,28 @@
         dates.push(k ? parseInt(k.slice(0, 2), 10) * 100 + parseInt(k.slice(3), 10) : 0);
       }
     });
-    return 'action: esphome.word_clock_xxxxxx_set_special_words\n' +
-      'data:\n' +
-      '  special_leds: [' + leds.join(', ') + ']\n' +
+    return '  special_leds: [' + leds.join(', ') + ']\n' +
       '  special_dates: [' + dates.join(', ') + ']\n';
   }
 
-  function copyHomeAssistant(special) {
-    var text = special ? specialAction() : homeAssistantAction(), box = $('#wcd-ha-text');
+  // The fun phrases' lines of the action.
+  function funAction() {
+    var leds = [], days = [], start = [], length = [];
+    design.fun.forEach(function (f) {
+      for (var i = 0; i < MAX_PER_WORD; i++) leds.push(i < f.leds.length ? f.leds[i] : -1);
+      var from = WC.minutesOf(f.from), to = WC.minutesOf(f.to), on = f.leds.length && from !== null && to !== null;
+      days.push(on ? f.days.reduce(function (m, v, d) { return v ? m | (1 << d) : m; }, 0) : 0);
+      start.push(on ? from : 0);
+      length.push(on ? (to - from + 1440) % 1440 : 0);
+    });
+    return '  fun_leds: [' + leds.join(', ') + ']\n' +
+      '  fun_days: [' + days.join(', ') + ']\n' +
+      '  fun_start: [' + start.join(', ') + ']\n' +
+      '  fun_length: [' + length.join(', ') + ']\n';
+  }
+
+  function copyHomeAssistant() {
+    var text = homeAssistantAction(), box = $('#wcd-ha-text');
     box.value = text;
     box.hidden = false;
     var done = function () { flash('Copied. Paste it in Home Assistant and replace xxxxxx with your clock\'s code.'); };
@@ -781,7 +924,10 @@
           next.letterSize = design.letterSize;
           lastExample = key;
           openedRevision = null;
-          flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.' : 'Grid loaded. Continue with step 2, or change it as you like.');
+          flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.'
+            : next.fun.some(function (f) { return f.leds.length; })
+              ? 'Grid loaded, with fun phrases: try them in step 4.'
+              : 'Grid loaded. Continue with step 2, or change it as you like.');
         }).catch(function (err) { flash(err.message); });
       });
     });
@@ -864,6 +1010,13 @@
     });
 
     // Step 3: words
+    root.querySelectorAll('.wcd-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        wordsTab = t.dataset.tab;
+        selectedPhrase = null;
+        render();
+      });
+    });
     $('#wcd-rule').addEventListener('change', function (e) {
       if (RULES[e.target.value] === undefined) return;
       design.nextHour = nextHourFrom(RULES[e.target.value]);
@@ -872,7 +1025,8 @@
     });
     $('#wcd-clear-phrase').addEventListener('click', function () {
       if (selectedPhrase === null) return;
-      if (selectedPhrase >= SPECIAL_ROW) design.special[selectedPhrase - SPECIAL_ROW].leds = [];
+      if (selectedPhrase >= FUN_ROW) design.fun[selectedPhrase - FUN_ROW].leds = [];
+      else if (selectedPhrase >= SPECIAL_ROW) design.special[selectedPhrase - SPECIAL_ROW].leds = [];
       else design.words[selectedPhrase] = [];
       changed();
       render();
@@ -899,8 +1053,7 @@
     root.querySelectorAll('[data-time]').forEach(function (b) {
       b.addEventListener('click', function () { $('#wcd-time').value = b.dataset.time; render(); });
     });
-    var specialDay = $('#wcd-special-day');
-    specialDay.addEventListener('change', function () { previewSpecial = specialDay.checked; render(); });
+
 
     // Step 5: send
     var customer = $('#wcd-customer'), emailAddress = $('#wcd-email-address'), order = $('#wcd-order');
@@ -916,8 +1069,7 @@
     clock.addEventListener('change', function () { clock.value = design.clock; });
     $('#wcd-confirm').addEventListener('change', updateSendButtons);
     $('#wcd-download').addEventListener('click', function () { if (confirmed()) download(); });
-    $('#wcd-ha-copy').addEventListener('click', function () { copyHomeAssistant(false); });
-    $('#wcd-ha-special').addEventListener('click', function () { copyHomeAssistant(true); });
+    $('#wcd-ha-copy').addEventListener('click', copyHomeAssistant);
     $('#wcd-email').addEventListener('click', email);
 
     syncRule();

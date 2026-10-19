@@ -9,13 +9,44 @@
   var STORAGE_KEY = 'word-clock-home-language', COLOUR_KEY = 'word-clock-home-colour';
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   var root, grid, cells = [], current = null, layouts = {};
+  // Grids with fun phrases show one every other few seconds (see demo()).
+  var DEMO_MS = 4000, demoOn = false, demoIndex = -1;
 
   function pad(n) { return String(n).padStart(2, '0'); }
+
+  // The fun phrases with letters, a day and a window.
+  function funPhrases() {
+    return (current && current.fun || []).filter(function (f) {
+      return f.leds.length && f.days.some(Boolean) && f.from && f.to;
+    });
+  }
+
+  // "Monday to Friday", "Friday", "Saturday and Sunday".
+  function dayNames(days) {
+    if ([1, 2, 3, 4, 5].every(function (d) { return days[d]; }) && !days[0] && !days[6]) return 'Monday to Friday';
+    var names = [1, 2, 3, 4, 5, 6, 0].filter(function (d) { return days[d]; }).map(function (d) { return DAYS[d]; });
+    return names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
+  }
+
+  // Every DEMO_MS: the time, then the next fun phrase, then the time again.
+  function demo() {
+    var fun = funPhrases();
+    demoOn = fun.length > 0 && !demoOn;
+    if (demoOn) demoIndex = (demoIndex + 1) % fun.length;
+    render();
+  }
 
   function render() {
     if (!current) return;
     var now = new Date(), h = now.getHours(), m = now.getMinutes();
     var lit = WC.litLeds(current, h, m, now.getDay()), dots = WC.minuteDots(current);
+    var fun = funPhrases(), shown = demoOn && fun.length ? fun[demoIndex % fun.length] : null, note = root.querySelector('#wcl-fun');
+    if (shown) {
+      lit = new Set(shown.leds);
+      note.textContent = 'Fun phrase, on ' + dayNames(shown.days) + ' from ' + shown.from + ' to ' + shown.to + ': ' +
+        WC.wordText(current, shown.leds);
+    }
+    note.hidden = !shown;
     cells.forEach(function (cell) {
       var l = cell.led, p = WC.pos(l);
       var ch = current.letters[p.row][p.col] || (dots.has(l) ? WC.DOT : '');
@@ -23,7 +54,7 @@
       cell.el.className = 'wcd-cell' + (ch === WC.DOT ? ' is-dot' : '') + (lit.has(l) ? ' is-lit' : '');
     });
     root.querySelector('#wcl-time').textContent = h + ':' + pad(m);
-    root.querySelector('#wcl-text').textContent = WC.timeText(current, h, m).replace(/\s+\+.*$/, '');
+    root.querySelector('#wcl-text').textContent = WC.timeText(current, h, m, now.getDay()).replace(/\s+\+.*$/, '');
     explain(now, h, m);
   }
 
@@ -31,8 +62,13 @@
   function explain(now, h, m) {
     var list = root.querySelector('#wcl-explain'), items = [];
     var words = WC.timeText(current, h, m).replace(/\s+\+.*$/, '');
-    var rounded = m - (m % 5), h12 = h % 12 || 12;
-    items.push('The words say ' + h12 + ':' + pad(rounded) + ', in steps of five minutes.');
+    var rounded = m - (m % 5), h12 = h % 12 || 12, fun = WC.funNow(current, h, m, now.getDay());
+    if (fun >= 0) {
+      var f = current.fun[fun];
+      items.push('A fun phrase replaces the time words, from ' + f.from + ' to ' + f.to + '.');
+    } else {
+      items.push('The words say ' + h12 + ':' + pad(rounded) + ', in steps of five minutes.');
+    }
     var day = now.getDay(), dayLeds = current.words[25 + day];
     if (dayLeds.length) {
       items.push('The letter ' + WC.wordText(current, dayLeds) + ' in the bottom row shows the day: ' + DAYS[day] + '.');
@@ -69,7 +105,7 @@
         layouts[key] = WC.readLayout(data);
         return layouts[key];
       });
-    ready.then(function (d) { current = d; render(); }).catch(function (err) {
+    ready.then(function (d) { current = d; demoOn = false; demoIndex = -1; render(); }).catch(function (err) {
       root.querySelector('#wcl-text').textContent = err.message;
     });
   }
@@ -104,6 +140,7 @@
     try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { /* private mode */ }
     choose(saved && root.querySelector('[data-lang="' + saved + '"]') ? saved : 'english');
     setInterval(render, 10000);
+    setInterval(demo, DEMO_MS);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

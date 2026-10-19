@@ -20,6 +20,7 @@ are saved on the clock and kept after a power cut.
 | **Indication: Minutes** | Show or hide the four minute dots. |
 | **Indication: Week Days** | Show or hide the letter for the day of the week. |
 | **Indication: Special Days** | Show or hide the special words on their dates. Only on clocks with special words. |
+| **Indication: Fun Phrases** | Show the fun phrases at their moments, or always the time. Only on clocks with fun phrases. |
 | **Restart Word Clock** | Restarts the clock. |
 
 Indications that your clock doesn't have are not shown.

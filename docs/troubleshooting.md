@@ -110,11 +110,9 @@ Your clock must be added to Home Assistant.
    name (as in `word-clock-xxxxxx.local`). It then looks like this:
 
    ![The Actions screen in Home Assistant in YAML mode, with the set_word_layout action pasted]({{ '/images/ha-actions.png' | relative_url }}){: .screenshot-wide }
-5. Click **Perform action**.
-6. Does your design have special words? Then click **Copy special words for
-   Home Assistant** in step 5 of the designer, paste that text in the same
-   way, replace `xxxxxx` again and click **Perform action**.
-7. Restart the clock with **Restart Word Clock**.
+5. Click **Perform action**, then restart the clock with **Restart Word Clock**.
+   The text includes your special words and fun phrases, if your design has
+   them.
 
 The clock's *Hardware* information then shows the new layout revision, here
 layout 9:

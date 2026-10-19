@@ -30,6 +30,7 @@ while you design.
         and word in the next steps.</p>
         <div class="wcd-cards">
           <button type="button" class="wcd-card" data-example="english" lang="en"><strong>English</strong><span>IT IS TWENTY PAST FOUR</span></button>
+          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
           <button type="button" class="wcd-card" data-example="german" lang="de"><strong>Deutsch</strong><span>ES IST ZWANZIG NACH VIER</span></button>
           <button type="button" class="wcd-card" data-example="french" lang="fr"><strong>Français</strong><span>IL EST QUATRE HEURES VINGT</span></button>
           <button type="button" class="wcd-card" data-example="spanish" lang="es"><strong>Español</strong><span>SON LAS CUATRO Y VEINTE</span></button>
@@ -86,14 +87,34 @@ while you design.
 
       <div class="wcd-panel" data-step="words" hidden>
         <h3 class="wcd-title">3. Choose the words</h3>
+        <div class="wcd-tabs" role="tablist" aria-label="Kind of words">
+          <button type="button" class="wcd-tab" role="tab" data-tab="time">Time</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="extras">Days &amp; dots</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="special">Special words</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="fun">Fun phrases</button>
+        </div>
+        <div data-tab-text="extras" hidden>
+          <p>The letter for the <strong>day of the week</strong> and the four
+          <strong>minute dots</strong> are optional: leave them empty if your
+          grid doesn't have them. If you use them, fill in all seven days or all
+          four dots.</p>
+        </div>
+        <div data-tab-text="special" hidden>
+          <p>A <strong>special word</strong> is a name or message hidden among
+          the letters, which lights up all day on its dates with a slow pulse,
+          such as a birthday or anniversary. Click its letters and type up to
+          four dates as day-month, like 14-03.</p>
+        </div>
+        <div data-tab-text="fun" hidden>
+          <p>A <strong>fun phrase</strong> is shown instead of the time on the
+          days and between the times you choose, like IT IS BEER O'CLOCK on
+          Friday from 17:00 to 18:00. Click all its letters, including IT IS
+          and O'CLOCK if you want them.</p>
+        </div>
+        <div data-tab-text="time">
         <p>For each phrase in the list, click the letters the clock lights. Only
-        the <strong>minutes</strong> and <strong>hours</strong> are needed. The
-        opening words, the days and the minute dots are optional: leave them
-        empty if your grid doesn't have them.</p>
-        <p>At the bottom of the list are four <strong>special words</strong>: a
-        name or message hidden among the letters, which lights up all day on
-        its dates, such as a birthday or anniversary, with a slow pulse. Click
-        its letters and type up to four dates as day-month, like 14-03.</p>
+        the <strong>minutes</strong> and <strong>hours</strong> are needed; the
+        opening words and the hour words for the full hour are optional.</p>
         <label class="wcd-label" for="wcd-rule">When does your language say the next hour?</label>
         <select id="wcd-rule" class="wcd-input">
           <option value="35">From x:35: English, French, Spanish, Portuguese, Italian (4:35 = twenty-five to five)</option>
@@ -103,6 +124,7 @@ while you design.
           <option value="never">Never: Korean, Japanese, Chinese, Turkish (4:40 = 네 시 사십 분, saat dört kırk)</option>
           <option value="custom" disabled>Your own choice (ticked per phrase below)</option>
         </select>
+        </div>
         <p class="wcd-muted" id="wcd-words-hint"></p>
         <div class="wcd-phrases" id="wcd-phrases"></div>
         <button type="button" class="btn" id="wcd-clear-phrase">Clear this phrase</button>
@@ -125,7 +147,14 @@ while you design.
         </div>
         <span class="wcd-label">Day</span>
         <div class="wcd-chips" id="wcd-days"></div>
-        <label class="wcd-next-hour wcd-special-day"><input type="checkbox" id="wcd-special-day"> Special day: also light the special words</label>
+        <div id="wcd-special-try" hidden>
+          <span class="wcd-label">Special words</span>
+          <div class="wcd-chips" id="wcd-special-chips"></div>
+        </div>
+        <div id="wcd-fun-try" hidden>
+          <span class="wcd-label">Fun phrases</span>
+          <div class="wcd-chips" id="wcd-fun-chips"></div>
+        </div>
         <span class="wcd-label">The clock shows</span>
         <p class="wcd-output" id="wcd-phrase"></p>
         <div class="wcd-check" id="wcd-check"></div>
@@ -186,7 +215,6 @@ while you design.
           Home Assistant. Without Home Assistant, click <strong>Download only</strong> and upload
           the file on the clock's own web page; see <a href="troubleshooting.html#changing-your-layout">Changing your layout</a>.</p>
           <button type="button" class="btn" id="wcd-ha-copy">Copy for Home Assistant</button>
-          <button type="button" class="btn" id="wcd-ha-special" hidden>Copy special words for Home Assistant</button>
           <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
         </details>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><span></span></div>

@@ -204,6 +204,7 @@ figure.highlight {
   .wcd-chip { min-width: 3rem; }
   .wcl-grid { margin-bottom: 0.75rem; }
   .wcl-says { margin: 0 0 0.25rem; }
+  .wcl-fun { margin: 0 0 0.25rem; font-weight: 600; }
   .wcl-explain { margin-top: 0; font-size: 0.9rem; color: $nav-child-link-color; }
 
   .wcl-colour {
@@ -700,13 +701,67 @@ figure.highlight {
   50% { opacity: 0.6; }
 }
 
+// Special words and fun phrases: dates or days and times on a line of their
+// own under the phrase.
+.wcd .wcd-phrase.has-details { flex-wrap: wrap; }
 .wcd .wcd-special-dates {
-  max-width: 16rem;
-  margin: 0.25rem 0 0.5rem;
+  flex: 0 1 16rem;
+  margin: 0 0.5rem 0.5rem;
   font-size: 0.85rem;
 }
-.wcd .wcd-special-day { display: block; margin-top: 0.75rem; }
+
+.wcd .wcd-fun-when {
+  flex: 1 0 100%;
+  padding: 0 0.5rem 0.5rem;
+  font-size: 0.85rem;
+  label { margin-right: 0.5rem; white-space: nowrap; }
+  .wcd-fun-days { display: flex; flex-wrap: wrap; gap: 0 0.25rem; margin-bottom: 0.35rem; }
+}
+.wcd .wcd-fun-time { display: inline-block; width: auto; padding: 0.2rem 0.4rem; }
 
 // A special word on its date (start step, or step 4 with "Special day"): a
 // slow pulse, as on the clock.
 .wcd .wcd-cell.is-special.is-lit { animation: wcd-pulse 4s ease-in-out infinite; }
+
+// Step 4: the special word and fun phrase buttons, each under their own
+// heading (the first-child rule of .wcd-label would remove its margin).
+#wcd-special-try, #wcd-fun-try { margin-top: 1rem; }
+
+// Step 3: tabs for the kinds of words.
+.wcd .wcd-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0.5rem 0 1rem;
+  border-bottom: 1px solid $border-color;
+}
+.wcd .wcd-tab {
+  padding: 0.45rem 0.75rem;
+  margin-bottom: -1px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: $nav-child-link-color;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+
+  &:hover { color: $body-heading-color; }
+  &.is-active { color: $link-color; border-bottom-color: $link-color; font-weight: 600; }
+  // Number of special words or fun phrases with letters.
+  &[data-count]:not([data-count=""])::after {
+    content: attr(data-count);
+    display: inline-block;
+    min-width: 1.2em;
+    margin-left: 0.35rem;
+    padding: 0 0.3em;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    text-align: center;
+    color: #fff;
+    background: $link-color;
+    border-radius: 999px;
+  }
+}
+

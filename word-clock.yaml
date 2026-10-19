@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.9.0"
+  project_version: "1.10.0"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -48,6 +48,7 @@ esphome:
             id(indication_minutes)->set_internal(!id(layout).has_feature(FEATURE_MINUTES));
             id(indication_week_days)->set_internal(!id(layout).has_feature(FEATURE_WEEKDAYS));
             id(indication_special_days)->set_internal(id(layout).special_count() == 0);
+            id(indication_fun_phrases)->set_internal(id(layout).fun_count() == 0);
             if (!id(layout).has_light_sensor()) {
               id(automatic_brightness)->set_internal(true);
               id(minimum_brightness)->set_internal(true);
@@ -124,6 +125,8 @@ api:
   # removes the key.
   encryption: {}
   services:
+    # The whole design in one action: the layout, the special words and the
+    # fun phrases (see write_layout in the wordclock_layout component).
     - service: set_word_layout
       variables:
         flat_layout: int[]
@@ -134,23 +137,24 @@ api:
         next_hour_mask: int
         # Design version (0 = not set); hardware_revision 0 keeps the clock's own.
         layout_revision: int
+        # Special words: 4 x 24 LED indices (-1 = unused); 4 x 4 dates as
+        # month * 100 + day (0 = unused).
+        special_leds: int[]
+        special_dates: int[]
+        # Fun phrases: 4 x 24 LED indices; per phrase its days (bit 0 Sunday
+        # ... bit 6 Saturday), start (minutes after midnight) and length in
+        # minutes (0 = unused).
+        fun_leds: int[]
+        fun_days: int[]
+        fun_start: int[]
+        fun_length: int[]
       then:
         - lambda: |-
             if (!id(layout).write_layout(flat_layout, hardware_revision, has_it_is, has_minutes,
-                                         has_weekdays, next_hour_mask, layout_revision)) {
+                                         has_weekdays, next_hour_mask, layout_revision,
+                                         special_leds, special_dates,
+                                         fun_leds, fun_days, fun_start, fun_length)) {
               ESP_LOGE("word_clock", "Failed to save word layout to EEPROM");
-            }
-    # Special words: up to 4 hidden words, each lit on up to 4 dates a year.
-    # special_leds: 4 x 24 LED indices (-1 = unused); special_dates: 4 x 4
-    # dates as month * 100 + day (0 = unused). Keeps the rest of the layout.
-    - service: set_special_words
-      variables:
-        special_leds: int[]
-        special_dates: int[]
-      then:
-        - lambda: |-
-            if (!id(layout).write_special(special_leds, special_dates)) {
-              ESP_LOGE("word_clock", "Failed to save the special words");
             }
 
 ota:
@@ -366,6 +370,13 @@ switch:
     optimistic: True
     restore_mode: RESTORE_DEFAULT_ON
     icon: "mdi:cake-variant-outline"
+  # Fun phrases in their windows (hidden when the layout has none).
+  - platform: template
+    name: "Indication: Fun Phrases"
+    id: indication_fun_phrases
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:glass-mug-variant"
 
 script:
   - id: apply_timezone
@@ -573,6 +584,9 @@ text_sensor:
       if (id(layout).special_count())
         sensor += ", " + std::to_string(id(layout).special_count()) + " special word" +
                   (id(layout).special_count() > 1 ? "s" : "");
+      if (id(layout).fun_count())
+        sensor += ", " + std::to_string(id(layout).fun_count()) + " fun phrase" +
+                  (id(layout).fun_count() > 1 ? "s" : "");
       return "Revision " + std::to_string(id(layout).hardware_revision()) + layout_rev + " (indications: " + fitted +
              ")" + sensor;
   - platform: template
@@ -737,6 +751,14 @@ light:
             CurrentTime[3] = time.day_of_week + 24;
             CurrentTime[4] = (total_minutes % 5) + 32;
 
+            // A fun phrase in its window replaces the opening words, minute
+            // phrase and hour ("IT IS BEER O'CLOCK"); the weekday and the
+            // minute dots stay. As a phrase of its own (100 + i), entering
+            // and leaving it uses the transition. day_of_week: 1 = Sunday.
+            const int8_t fun = id(indication_fun_phrases).state
+                ? id(layout).fun_now(time.day_of_week - 1, time.hour * 60 + time.minute) : -1;
+            if (fun >= 0) CurrentTime[1] = 100 + fun;
+
             // When the five-minute phrase changes, the transition starts from
             // the letters shown until now. Minute dots and the weekday change
             // at once.
@@ -749,7 +771,12 @@ light:
             for (int i = 0; i < 5; i++) PreviousTime[i] = CurrentTime[i];
 
             std::fill_n(letters, it.size(), Color::BLACK);
+            for (int j = 0; fun >= 0 && j < wordclock_layout::MAX_LEDS_PER_WORD; j++) {
+              int8_t led = id(layout).fun_led_for(fun, j);
+              if (led >= 0) letters[led] = current_color;
+            }
             for (int i = 0; i < 5; i++) {
+              if (fun >= 0 && i <= 2) continue;  // the fun phrase instead
               // Skip indications that are switched off or not fitted on this clock.
               if (i == 0 && (!id(indication_it_is).state ||
                              !id(layout).has_feature(wordclock_layout::FEATURE_IT_IS))) continue;
