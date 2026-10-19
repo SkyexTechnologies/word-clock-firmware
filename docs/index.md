@@ -80,6 +80,8 @@ or in Home Assistant.
 - Time in words to the nearest five minutes, with four minute dots for the
   minutes in between.
 - Letter for the day of the week.
+- Special words: a hidden name or message that lights up on its own dates,
+  such as a birthday.
 - Automatic brightness from the built-in light sensor (if your clock has
   one), or a fixed brightness.
 - Smooth transitions between times: fade, crossfade, typewriter or sweep.

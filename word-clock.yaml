@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.8.0"
+  project_version: "1.9.0"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -47,6 +47,7 @@ esphome:
             id(indication_it_is)->set_internal(!id(layout).has_feature(FEATURE_IT_IS));
             id(indication_minutes)->set_internal(!id(layout).has_feature(FEATURE_MINUTES));
             id(indication_week_days)->set_internal(!id(layout).has_feature(FEATURE_WEEKDAYS));
+            id(indication_special_days)->set_internal(id(layout).special_count() == 0);
             if (!id(layout).has_light_sensor()) {
               id(automatic_brightness)->set_internal(true);
               id(minimum_brightness)->set_internal(true);
@@ -138,6 +139,18 @@ api:
             if (!id(layout).write_layout(flat_layout, hardware_revision, has_it_is, has_minutes,
                                          has_weekdays, next_hour_mask, layout_revision)) {
               ESP_LOGE("word_clock", "Failed to save word layout to EEPROM");
+            }
+    # Special words: up to 4 hidden words, each lit on up to 4 dates a year.
+    # special_leds: 4 x 24 LED indices (-1 = unused); special_dates: 4 x 4
+    # dates as month * 100 + day (0 = unused). Keeps the rest of the layout.
+    - service: set_special_words
+      variables:
+        special_leds: int[]
+        special_dates: int[]
+      then:
+        - lambda: |-
+            if (!id(layout).write_special(special_leds, special_dates)) {
+              ESP_LOGE("word_clock", "Failed to save the special words");
             }
 
 ota:
@@ -346,6 +359,13 @@ switch:
     optimistic: True
     restore_mode: RESTORE_DEFAULT_ON
     icon: "mdi:file-word-box-outline"
+  # Special words on their dates (hidden when the layout has none).
+  - platform: template
+    name: "Indication: Special Days"
+    id: indication_special_days
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_ON
+    icon: "mdi:cake-variant-outline"
 
 script:
   - id: apply_timezone
@@ -550,6 +570,9 @@ text_sensor:
       std::string layout_rev = id(layout).layout_revision()
           ? ", layout " + std::to_string(id(layout).layout_revision()) : std::string("");
       std::string sensor = id(layout).has_light_sensor() ? std::string("") : std::string(", no light sensor");
+      if (id(layout).special_count())
+        sensor += ", " + std::to_string(id(layout).special_count()) + " special word" +
+                  (id(layout).special_count() > 1 ? "s" : "");
       return "Revision " + std::to_string(id(layout).hardware_revision()) + layout_rev + " (indications: " + fitted +
              ")" + sensor;
   - platform: template
@@ -737,6 +760,25 @@ light:
               for (int j = 0; j < wordclock_layout::MAX_LEDS_PER_WORD; j++) {
                 int8_t led = id(layout).led_for(CurrentTime[i], j);
                 if (led >= 0) letters[led] = current_color;
+              }
+            }
+
+            // Special words on their dates, with a slow pulse (60-100 %,
+            // every 4 s); letters that are also part of the time stay full.
+            // Off with the "Indication: Special Days" switch. The dip never
+            // takes the LEDs below the brightness floor, where the 8-bit
+            // channels round to 0: near minimum brightness it gets shallower,
+            // at the minimum the word stays lit.
+            const float brightness = id(word_clock).current_values.get_brightness();
+            const float lowest = brightness > 0 ? std::min(1.0f, std::max(0.6f, float(${brightness_floor}) / brightness)) : 1.0f;
+            const float pulse = lowest + (1.0f - lowest) * (0.5f + 0.5f * sinf(millis() * (2.0f * float(M_PI) / 4000.0f)));
+            for (uint8_t s = 0; id(indication_special_days).state && s < wordclock_layout::MAX_SPECIAL_WORDS; s++) {
+              if (!id(layout).special_on(s, time.month, time.day_of_month)) continue;
+              for (int j = 0; j < wordclock_layout::MAX_LEDS_PER_WORD; j++) {
+                int8_t led = id(layout).special_led_for(s, j);
+                if (led >= 0 && !(letters[led].r || letters[led].g || letters[led].b))
+                  letters[led] = Color(uint8_t(current_color.r * pulse), uint8_t(current_color.g * pulse),
+                                       uint8_t(current_color.b * pulse));
               }
             }
 

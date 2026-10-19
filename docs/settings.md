@@ -19,6 +19,7 @@ are saved on the clock and kept after a power cut.
 | **Indication: It is** | Show or hide the opening words, such as "IT IS". |
 | **Indication: Minutes** | Show or hide the four minute dots. |
 | **Indication: Week Days** | Show or hide the letter for the day of the week. |
+| **Indication: Special Days** | Show or hide the special words on their dates. Only on clocks with special words. |
 | **Restart Word Clock** | Restarts the clock. |
 
 Indications that your clock doesn't have are not shown.

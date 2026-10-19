@@ -90,6 +90,10 @@ while you design.
         the <strong>minutes</strong> and <strong>hours</strong> are needed. The
         opening words, the days and the minute dots are optional: leave them
         empty if your grid doesn't have them.</p>
+        <p>At the bottom of the list are four <strong>special words</strong>: a
+        name or message hidden among the letters, which lights up all day on
+        its dates, such as a birthday or anniversary, with a slow pulse. Click
+        its letters and type up to four dates as day-month, like 14-03.</p>
         <label class="wcd-label" for="wcd-rule">When does your language say the next hour?</label>
         <select id="wcd-rule" class="wcd-input">
           <option value="35">From x:35: English, French, Spanish, Portuguese, Italian (4:35 = twenty-five to five)</option>
@@ -121,6 +125,7 @@ while you design.
         </div>
         <span class="wcd-label">Day</span>
         <div class="wcd-chips" id="wcd-days"></div>
+        <label class="wcd-next-hour wcd-special-day"><input type="checkbox" id="wcd-special-day"> Special day: also light the special words</label>
         <span class="wcd-label">The clock shows</span>
         <p class="wcd-output" id="wcd-phrase"></p>
         <div class="wcd-check" id="wcd-check"></div>
@@ -181,6 +186,7 @@ while you design.
           Home Assistant. Without Home Assistant, click <strong>Download only</strong> and upload
           the file on the clock's own web page; see <a href="troubleshooting.html#changing-your-layout">Changing your layout</a>.</p>
           <button type="button" class="btn" id="wcd-ha-copy">Copy for Home Assistant</button>
+          <button type="button" class="btn" id="wcd-ha-special" hidden>Copy special words for Home Assistant</button>
           <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
         </details>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><span></span></div>

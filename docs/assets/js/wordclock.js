@@ -20,6 +20,9 @@
   // Letter height on the front plate in mm (capital H), as the DXF generator
   // cuts it; squares are 23.2 mm apart.
   var LETTER_SIZES = [10, 12, 14, 16], DEFAULT_LETTER_SIZE = 12;
+  // Special words: hidden words lit on their dates ("MM-DD"), as in the
+  // firmware (MAX_SPECIAL_WORDS, MAX_SPECIAL_DATES).
+  var SPECIAL_WORDS = 4, SPECIAL_DATES = 4;
   // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
   var DOT = '.';
 
@@ -70,6 +73,28 @@
       SYMBOLS.some(function (s) { return s[0] === c; });
   }
 
+  function blankSpecial() {
+    var a = [];
+    for (var i = 0; i < SPECIAL_WORDS; i++) a.push({ leds: [], dates: [] });
+    return a;
+  }
+
+  // "MM-DD" for a real day of the year, otherwise null.
+  function dateKey(month, day) {
+    if (!(month >= 1 && month <= 12 && day >= 1 && day <= new Date(2024, month, 0).getDate())) return null;
+    return String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+  }
+
+  // The LEDs of the special words lit on `key` ("MM-DD"), or of all of them
+  // when key is true.
+  function specialLeds(d, key) {
+    var lit = new Set();
+    (d.special || []).forEach(function (s) {
+      if (key === true || s.dates.indexOf(key) !== -1) s.leds.forEach(function (l) { lit.add(l); });
+    });
+    return lit;
+  }
+
   function blankRows() { var r = []; for (var i = 0; i < ROWS; i++) r.push([]); return r; }
   function nextHourFrom(first) { var a = []; for (var i = 0; i < 12; i++) a.push(i >= first); return a; }
 
@@ -88,7 +113,17 @@
       throw new Error('This is not a word clock design file.');
     }
     var d = { name: typeof data.name === 'string' ? data.name : '', letters: blankLetters(), words: blankRows(),
-      letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null };
+      letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null, special: blankSpecial() };
+    if (Array.isArray(data.special_words)) {
+      data.special_words.slice(0, SPECIAL_WORDS).forEach(function (s, i) {
+        if (!s) return;
+        d.special[i].leds = (Array.isArray(s.leds) ? s.leds : []).filter(function (l) { return l >= 0 && l < LEDS; }).slice(0, MAX_PER_WORD);
+        d.special[i].dates = (Array.isArray(s.dates) ? s.dates : []).filter(function (t) {
+          var m = /^(\d\d)-(\d\d)$/.exec(t);
+          return m && dateKey(+m[1], +m[2]) === t;
+        }).slice(0, SPECIAL_DATES);
+      });
+    }
     if (Array.isArray(data.next_hour) && data.next_hour.length === 12) {
       d.nextHour = data.next_hour.map(Boolean);
     } else {
@@ -209,6 +244,8 @@
   window.WordClock = {
     SIZE: SIZE, LEDS: LEDS, MAX_PER_WORD: MAX_PER_WORD, ROWS: ROWS, DOT: DOT,
     LETTER_SIZES: LETTER_SIZES, DEFAULT_LETTER_SIZE: DEFAULT_LETTER_SIZE,
+    SPECIAL_WORDS: SPECIAL_WORDS, SPECIAL_DATES: SPECIAL_DATES, blankSpecial: blankSpecial, dateKey: dateKey,
+    specialLeds: specialLeds,
     led: led, pos: pos, cleanLetter: cleanLetter, stripEmojiMarks: stripEmojiMarks,
     SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, textStyle: textStyle, blankRows: blankRows, blankLetters: blankLetters,
     nextHourFrom: nextHourFrom, readLayout: readLayout, loadLayout: loadLayout,

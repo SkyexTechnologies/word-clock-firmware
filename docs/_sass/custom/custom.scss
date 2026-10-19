@@ -694,3 +694,19 @@ figure.highlight {
 .main-content .screenshot { max-width: 560px; }
 .main-content .screenshot-narrow { max-width: 360px; }
 .main-content .screenshot-wide { max-width: 100%; }
+
+@keyframes wcd-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.wcd .wcd-special-dates {
+  max-width: 16rem;
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.85rem;
+}
+.wcd .wcd-special-day { display: block; margin-top: 0.75rem; }
+
+// A special word on its date (start step, or step 4 with "Special day"): a
+// slow pulse, as on the clock.
+.wcd .wcd-cell.is-special.is-lit { animation: wcd-pulse 4s ease-in-out infinite; }

@@ -3,9 +3,9 @@
 namespace esphome {
 namespace wordclock_layout {
 
-// The page reads a design file from the designer (format 2, as
-// scripts/provision_layout.py) and sends it as a LayoutBlob with
-// hardware_revision 0.
+// The page reads a design file from the designer (format 2, with optional
+// special_words, as scripts/provision_layout.py) and sends it as a version 3
+// LayoutBlob with hardware_revision 0.
 const char UPLOAD_PAGE_HEAD[] PROGMEM = R"HTML(<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Word Clock layout</title>
@@ -37,8 +37,8 @@ if(!isInt(rev,0,65535))throw'layout_revision must be a number from 0 to 65535.';
 if(!ind||typeof ind.it_is!=='boolean'||typeof ind.minutes!=='boolean'||typeof ind.weekdays!=='boolean')throw'The indications are missing.';
 if(!Array.isArray(nh)||nh.length!==12)throw'next_hour must have 12 values.';
 if(!Array.isArray(w)||w.length!==49)throw'The file must have 49 word rows.';
-var b=new ArrayBuffer(1192),v=new DataView(b),u=new Uint8Array(b),m=0,i,j,row;
-v.setUint32(0,0x574C4B31,true);v.setUint8(4,2);v.setUint8(5,0);
+var b=new ArrayBuffer(1320),v=new DataView(b),u=new Uint8Array(b),m=0,i,j,k,row,sp=d.special_words||[];
+v.setUint32(0,0x574C4B31,true);v.setUint8(4,3);v.setUint8(5,0);
 v.setUint8(6,(ind.it_is?1:0)|(ind.minutes?2:0)|(ind.weekdays?4:0));
 for(i=0;i<12;i++)if(nh[i])m|=1<<i;
 v.setUint16(8,m,true);v.setUint16(10,rev,true);
@@ -47,7 +47,13 @@ if(!Array.isArray(w[i]))throw'Row '+i+' is not a list of LEDs.';
 row=w[i].filter(function(l){return l!==-1});
 if(row.length>24)throw'Row '+i+' has more than 24 LEDs.';
 for(j=0;j<24;j++){if(j<row.length&&!isInt(row[j],0,120))throw'Row '+i+' has an invalid LED number.';v.setInt8(12+i*24+j,j<row.length?row[j]:-1)}}
-v.setUint32(1188,crc32(u.subarray(0,1188)),true);
+if(!Array.isArray(sp)||sp.length>4)throw'special_words must be a list of up to 4 words.';
+for(i=0;i<4;i++){var s=sp[i]||{leds:[],dates:[]},sl=(s.leds||[]).filter(function(l){return l!==-1}),sd=s.dates||[];
+if(sl.length>24||sd.length>4)throw'Special word '+(i+1)+' has too many letters or dates.';
+for(j=0;j<24;j++){if(j<sl.length&&!isInt(sl[j],0,120))throw'Special word '+(i+1)+' has an invalid LED number.';v.setInt8(1188+i*24+j,j<sl.length?sl[j]:-1)}
+for(k=0;k<4;k++){var md=k<sd.length?/^(\d\d)-(\d\d)$/.exec(sd[k]):null;if(k<sd.length&&!md)throw'Special word '+(i+1)+' has an invalid date (MM-DD).';
+v.setUint8(1284+i*8+k*2,md?+md[1]:0);v.setUint8(1285+i*8+k*2,md?+md[2]:0)}}
+v.setUint32(1316,crc32(u.subarray(0,1316)),true);
 return{data:b,rev:rev}}
 function say(t,c){var e=$('msg');e.textContent=t;e.className=c||''}
 $('f').onchange=function(){blob=null;$('b').disabled=true;$('info').textContent='';say('');

@@ -30,8 +30,15 @@ static const uint8_t ROW_MINUTES = 1;
 static const uint8_t ROW_HOURS = 13;
 static const uint8_t ROW_HOURS_ON_THE_HOUR = 37;
 
+// Special words: hidden words lit on their dates (a name on a birthday).
+static const uint8_t MAX_SPECIAL_WORDS = 4;
+static const uint8_t MAX_SPECIAL_DATES = 4;
+
 static const uint32_t CONFIG_MAGIC = 0x574C4B31;  // "WLK1"
-static const uint8_t CONFIG_VERSION = 2;
+// Version 3 (firmware 1.9.0) adds the special words. Version 2 layouts are
+// still read: the same bytes up to the words, then their CRC.
+static const uint8_t CONFIG_VERSION = 3;
+static const uint8_t CONFIG_VERSION_2 = 2;
 // Sector 1018 (0x405FA000) is reserved by the custom 4 MB linker script.
 // ESPHome preferences remain in sector 1019 (0x405FB000).
 static const uint32_t LAYOUT_FLASH_SECTOR = 1018;
@@ -68,9 +75,15 @@ struct LayoutBlob {
   // 0 = not set. Was reserved (always 0) before firmware 1.2.0.
   uint16_t layout_revision;
   int8_t words[NUM_WORDS][MAX_LEDS_PER_WORD];
+  // Version 3: LEDs of each special word (-1 = unused) and its dates as
+  // {month 1-12, day 1-31}, {0, 0} = unused.
+  int8_t special_leds[MAX_SPECIAL_WORDS][MAX_LEDS_PER_WORD];
+  uint8_t special_dates[MAX_SPECIAL_WORDS][MAX_SPECIAL_DATES][2];
   uint32_t crc;  // CRC-32 (zlib) over all bytes above
 };
-static_assert(sizeof(LayoutBlob) == 1192, "LayoutBlob layout must match provision_layout_usb.py");
+static_assert(sizeof(LayoutBlob) == 1320, "LayoutBlob layout must match provision_layout_usb.py");
+// A version 2 layout ends after the words with its CRC (1192 bytes).
+static const size_t V2_CRC_OFFSET = offsetof(LayoutBlob, special_leds);
 // The EEPROM library's buffer, only allocated while reading or writing.
 static const uint16_t EEPROM_SIZE = sizeof(LayoutBlob);
 
@@ -95,12 +108,23 @@ class WordClockLayout : public AsyncWebHandler, public Component {
     // buffer. Nothing was changed, so end() does not write to flash.
     this->layout_eeprom_.end();
 
-    loaded_ = blob_.magic == CONFIG_MAGIC && blob_.version == CONFIG_VERSION && blob_.crc == crc_(blob_) &&
-              values_valid_(blob_);
+    bool intact = false;
+    if (blob_.magic == CONFIG_MAGIC && blob_.version == CONFIG_VERSION) {
+      intact = blob_.crc == crc_(blob_);
+    } else if (blob_.magic == CONFIG_MAGIC && blob_.version == CONFIG_VERSION_2) {
+      // Written before firmware 1.9.0: no special words; its CRC follows the
+      // words, where version 3 has the special words.
+      uint32_t crc;
+      memcpy(&crc, reinterpret_cast<const uint8_t *>(&blob_) + V2_CRC_OFFSET, sizeof(crc));
+      intact = crc == crc_bytes_(&blob_, V2_CRC_OFFSET);
+      clear_special_(blob_);
+    }
+    loaded_ = intact && values_valid_(blob_);
 
     if (!loaded_) {
       ESP_LOGE(TAG, "No valid word layout in flash - running LED self-test until provisioned");
       memset(blob_.words, -1, sizeof(blob_.words));
+      clear_special_(blob_);
       blob_.hardware_revision = 0;
       blob_.features = 0;
       blob_.options = 0;
@@ -109,9 +133,9 @@ class WordClockLayout : public AsyncWebHandler, public Component {
     } else {
       ESP_LOGI(TAG,
                "Loaded word layout from flash (version %u, hardware revision %u, layout revision %u, "
-               "indications 0x%02X, options 0x%02X, next hour 0x%03X)",
+               "indications 0x%02X, options 0x%02X, next hour 0x%03X, %u special words)",
                blob_.version, blob_.hardware_revision, blob_.layout_revision, blob_.features, blob_.options,
-               blob_.next_hour_mask);
+               blob_.next_hour_mask, this->special_count());
     }
 
     uint32_t reason = ESP.getResetInfoPtr()->reason;
@@ -196,6 +220,32 @@ class WordClockLayout : public AsyncWebHandler, public Component {
     return ROW_HOURS + h;
   }
 
+  // Special word i (0-3), like led_for(); -1 means "no more LEDs".
+  int8_t special_led_for(uint8_t i, uint8_t slot) const {
+    if (!loaded_ || i >= MAX_SPECIAL_WORDS || slot >= MAX_LEDS_PER_WORD)
+      return -1;
+    return blob_.special_leds[i][slot];
+  }
+
+  // Whether special word i is lit on this date (month 1-12, day 1-31).
+  bool special_on(uint8_t i, int month, int day) const {
+    if (this->special_led_for(i, 0) < 0)
+      return false;
+    for (uint8_t d = 0; d < MAX_SPECIAL_DATES; d++)
+      if (blob_.special_dates[i][d][0] == month && blob_.special_dates[i][d][1] == day)
+        return true;
+    return false;
+  }
+
+  // Special words with letters (0-4).
+  uint8_t special_count() const {
+    uint8_t n = 0;
+    for (uint8_t i = 0; i < MAX_SPECIAL_WORDS; i++)
+      if (this->special_led_for(i, 0) >= 0)
+        n++;
+    return n;
+  }
+
   bool is_provisioned() const { return loaded_; }
   // 0 while unprovisioned.
   uint8_t hardware_revision() const { return blob_.hardware_revision; }
@@ -254,6 +304,50 @@ class WordClockLayout : public AsyncWebHandler, public Component {
                          (has_weekdays ? FEATURE_WEEKDAYS : 0);
     candidate.next_hour_mask = (uint16_t) next_hour_mask;
     candidate.layout_revision = (uint16_t) layout_revision;
+    // The special words have their own action (write_special); keep them.
+    memcpy(candidate.special_leds, blob_.special_leds, sizeof(candidate.special_leds));
+    memcpy(candidate.special_dates, blob_.special_dates, sizeof(candidate.special_dates));
+    if (!loaded_)
+      clear_special_(candidate);
+    return this->store_(candidate);
+  }
+
+  // From the set_special_words API action. `leds`: MAX_SPECIAL_WORDS *
+  // MAX_LEDS_PER_WORD entries (-1 = unused); `dates`: MAX_SPECIAL_WORDS *
+  // MAX_SPECIAL_DATES entries, month * 100 + day (0 = unused). Keeps the rest
+  // of the layout.
+  bool write_special(const std::vector<int32_t> &leds, const std::vector<int32_t> &dates) {
+    if (!loaded_) {
+      ESP_LOGE(TAG, "Special words need a stored layout first");
+      return false;
+    }
+    if (leds.size() != (size_t) MAX_SPECIAL_WORDS * MAX_LEDS_PER_WORD ||
+        dates.size() != (size_t) MAX_SPECIAL_WORDS * MAX_SPECIAL_DATES) {
+      ESP_LOGE(TAG, "Special words need %u LED and %u date entries, got %u and %u",
+               (unsigned) (MAX_SPECIAL_WORDS * MAX_LEDS_PER_WORD), (unsigned) (MAX_SPECIAL_WORDS * MAX_SPECIAL_DATES),
+               (unsigned) leds.size(), (unsigned) dates.size());
+      return false;
+    }
+    LayoutBlob candidate = blob_;
+    for (uint8_t i = 0; i < MAX_SPECIAL_WORDS; i++) {
+      for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++) {
+        int32_t led = leds[i * MAX_LEDS_PER_WORD + s];
+        if (led < -1 || led >= NUM_LEDS) {
+          ESP_LOGE(TAG, "Special word LED index %ld is outside -1..%u", (long) led, NUM_LEDS - 1);
+          return false;
+        }
+        candidate.special_leds[i][s] = (int8_t) led;
+      }
+      for (uint8_t d = 0; d < MAX_SPECIAL_DATES; d++) {
+        int32_t date = dates[i * MAX_SPECIAL_DATES + d];
+        if (date < 0 || date > 1231) {
+          ESP_LOGE(TAG, "Special word date %ld is not month * 100 + day", (long) date);
+          return false;
+        }
+        candidate.special_dates[i][d][0] = (uint8_t) (date / 100);
+        candidate.special_dates[i][d][1] = (uint8_t) (date % 100);
+      }
+    }
     return this->store_(candidate);
   }
 
@@ -290,9 +384,9 @@ class WordClockLayout : public AsyncWebHandler, public Component {
     loaded_ = this->layout_eeprom_.commit();
     this->layout_eeprom_.end();
     if (loaded_) {
-      ESP_LOGI(TAG, "Saved word layout to EEPROM (hardware revision %u, layout revision %u, indications 0x%02X); "
-                    "restart to apply indication visibility",
-               blob_.hardware_revision, blob_.layout_revision, blob_.features);
+      ESP_LOGI(TAG, "Saved word layout to EEPROM (hardware revision %u, layout revision %u, indications 0x%02X, "
+                    "%u special words); restart to apply indication visibility",
+               blob_.hardware_revision, blob_.layout_revision, blob_.features, this->special_count());
     } else {
       ESP_LOGE(TAG, "EEPROM commit failed; word layout is unavailable until reboot or reprovisioning");
     }
@@ -342,14 +436,31 @@ class WordClockLayout : public AsyncWebHandler, public Component {
       for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)
         if (blob.words[w][s] < -1 || blob.words[w][s] >= NUM_LEDS)
           return false;
+    for (uint8_t i = 0; i < MAX_SPECIAL_WORDS; i++) {
+      for (uint8_t s = 0; s < MAX_LEDS_PER_WORD; s++)
+        if (blob.special_leds[i][s] < -1 || blob.special_leds[i][s] >= NUM_LEDS)
+          return false;
+      for (uint8_t d = 0; d < MAX_SPECIAL_DATES; d++) {
+        uint8_t month = blob.special_dates[i][d][0], day = blob.special_dates[i][d][1];
+        if ((month || day) && (month < 1 || month > 12 || day < 1 || day > 31))
+          return false;
+      }
+    }
     return true;
   }
 
+  static void clear_special_(LayoutBlob &blob) {
+    memset(blob.special_leds, -1, sizeof(blob.special_leds));
+    memset(blob.special_dates, 0, sizeof(blob.special_dates));
+  }
+
+  static uint32_t crc_(const LayoutBlob &blob) { return crc_bytes_(&blob, offsetof(LayoutBlob, crc)); }
+
   // CRC-32 as computed by zlib.crc32() (reflected, polynomial 0xEDB88320).
-  static uint32_t crc_(const LayoutBlob &blob) {
+  static uint32_t crc_bytes_(const void *data, size_t length) {
     uint32_t crc = 0xFFFFFFFF;
-    const uint8_t *p = reinterpret_cast<const uint8_t *>(&blob);
-    for (size_t i = 0; i < offsetof(LayoutBlob, crc); i++) {
+    const uint8_t *p = static_cast<const uint8_t *>(data);
+    for (size_t i = 0; i < length; i++) {
       crc ^= p[i];
       for (uint8_t bit = 0; bit < 8; bit++)
         crc = (crc >> 1) ^ (0xEDB88320 & (0u - (crc & 1)));

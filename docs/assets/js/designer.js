@@ -68,6 +68,15 @@
     PHRASES.push({ group: 'Minute dots (optional)', label: n + ' extra minute' + (n > 1 ? 's' : ''),
       hint: 'e.g. ' + clock(4, 20 + n), row: 32 + n, dots: true, optional: true });
   }
+  // Special words: rows from SPECIAL_ROW on stand for design.special[i].
+  var SPECIAL_ROW = 100;
+  for (n = 0; n < WC.SPECIAL_WORDS; n++) {
+    PHRASES.push({ group: 'Special words (optional)', label: 'Special word ' + (n + 1),
+      hint: 'lit on its dates, e.g. a name on a birthday', row: SPECIAL_ROW + n, special: n, optional: true });
+  }
+
+  // The LEDs of a phrase row, special words included.
+  function rowLeds(row) { return row >= SPECIAL_ROW ? design.special[row - SPECIAL_ROW].leds : design.words[row]; }
 
   // Quick choices for the next-hour marks: first minute phrase that names the
   // next hour.
@@ -77,7 +86,7 @@
 
   function emptyDesign() {
     return { name: '', customer: '', email: '', order: '', clock: 1, layoutRevision: 1, nextHour: nextHourFrom(RULES['35']),
-      letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows() };
+      letterSize: WC.DEFAULT_LETTER_SIZE, letters: WC.blankLetters(), words: WC.blankRows(), special: WC.blankSpecial() };
   }
 
   function loadExample(key) {
@@ -125,6 +134,10 @@
       clock_number: design.clock,
       // Letter height on the front plate (mm), read by the DXF generator.
       letter_size: design.letterSize,
+      // Hidden words lit on their dates ("MM-DD"); only those with letters.
+      special_words: design.special.filter(function (sw) { return sw.leds.length; }).map(function (sw) {
+        return { leds: sw.leds.slice().sort(function (a, b) { return a - b; }), dates: sw.dates.slice() };
+      }),
       // Squares lit as minute dots without a letter of their own get a ".",
       // so the DXF generator engraves a dot there.
       letters: design.letters.map(function (row, r) {
@@ -151,7 +164,10 @@
       d.customer_email ? ['"customer_email": ' + JSON.stringify(d.customer_email)] : [],
       d.order_number ? ['"order_number": ' + JSON.stringify(d.order_number)] : [], [
       '"clock_number": ' + d.clock_number,
-      '"letter_size": ' + d.letter_size,
+      '"letter_size": ' + d.letter_size
+    ], d.special_words.length ? ['"special_words": [\n' + d.special_words.map(function (sw) {
+      return '    {"leds": ' + list(sw.leds) + ', "dates": ' + list(sw.dates) + '}';
+    }).join(',\n') + '\n  ]'] : [], [
       '"letters": ' + rows(d.letters)
     ]).map(function (line) { return '  ' + line; }).join(',\n') + '\n}\n';
   }
@@ -189,7 +205,7 @@
   var stored = load();
   var design = stored || emptyDesign();
   var edited = !!stored;
-  var step = 'start', selectedPhrase = null, selectedCell = null, currentDay = 3;
+  var step = 'start', selectedPhrase = null, selectedCell = null, currentDay = 3, previewSpecial = false;
   var root, gridEl;
 
   /* ---------- clock logic (same rules as the firmware) ---------- */
@@ -277,14 +293,23 @@
   function render() {
     var lit = new Set(), inPhrase = new Set(), used = new Set();
     var now = new Date();
-    if (step === 'start') lit = litLeds(now.getHours(), now.getMinutes(), now.getDay());
+    // Special words lit: today's on the start step, all of them in step 4
+    // with "Special day" on. They pulse, as on the clock.
+    var special = new Set();
+    if (step === 'start') {
+      lit = litLeds(now.getHours(), now.getMinutes(), now.getDay());
+      special = WC.specialLeds(design, WC.dateKey(now.getMonth() + 1, now.getDate()));
+    }
     if (step === 'check') {
       var t = previewTime();
       lit = litLeds(t.hour, t.minute, currentDay);
+      if (previewSpecial) special = WC.specialLeds(design, true);
     }
+    special.forEach(function (l) { if (!lit.has(l)) lit.add(l); else special.delete(l); });
     if (step === 'words') {
       design.words.forEach(function (w) { w.forEach(function (l) { used.add(l); }); });
-      if (selectedPhrase !== null) design.words[selectedPhrase].forEach(function (l) { inPhrase.add(l); });
+      design.special.forEach(function (sw) { sw.leds.forEach(function (l) { used.add(l); }); });
+      if (selectedPhrase !== null) rowLeds(selectedPhrase).forEach(function (l) { inPhrase.add(l); });
     }
     var minuteLeds = new Set();
     design.words.slice(33, 37).forEach(function (w) { w.forEach(function (l) { minuteLeds.add(l); }); });
@@ -305,6 +330,7 @@
       WC.fillCell(cell, ch);
       cell.className = 'wcd-cell' + (ch === DOT ? ' is-dot' : '');
       if (lit.has(l)) cell.classList.add('is-lit');
+      if (special.has(l)) cell.classList.add('is-special');
       if (step === 'words') {
         if (inPhrase.has(l)) cell.classList.add('is-selected');
         else if (used.has(l)) cell.classList.add('is-used');
@@ -318,6 +344,7 @@
     if (step === 'words') renderPhraseList();
     if (step === 'check') { $('#wcd-phrase').textContent = timeText(previewTime().hour, previewTime().minute); renderCheck('#wcd-check'); }
     if (step === 'send') {
+      $('#wcd-ha-special').hidden = !design.special.some(function (sw) { return sw.leds.length; });
       renderCheck('#wcd-send-check');
       $('#wcd-revision').textContent = design.layoutRevision;
     }
@@ -335,7 +362,7 @@
         heading.textContent = group;
         list.appendChild(heading);
       }
-      var leds = design.words[ph.row];
+      var leds = rowLeds(ph.row);
       var item = document.createElement('div');
       item.className = 'wcd-phrase' + (ph.row === selectedPhrase ? ' is-active' : '') + (ph.optional ? ' is-optional' : '');
       var b = document.createElement('button');
@@ -365,12 +392,39 @@
         label.title = 'Tick when this phrase names the coming hour, like "twenty-five to FIVE" at 4:35';
         item.appendChild(label);
       }
+      if (ph.special !== undefined) item.appendChild(specialDates(ph.special));
       list.appendChild(item);
     });
     var current = PHRASES.filter(function (p) { return p.row === selectedPhrase; })[0];
     $('#wcd-words-hint').textContent = current
       ? 'Now click the letters for "' + current.label + '" in the grid. Click a letter again to remove it.'
       : 'Choose a phrase from the list, then click its letters in the grid.';
+  }
+
+  // The dates field of special word i: day-month, comma separated
+  // ("14-03, 25-12"); stored as "MM-DD".
+  function specialDates(i) {
+    var sw = design.special[i];
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'wcd-input wcd-special-dates';
+    input.placeholder = 'Dates, day-month: 14-03, 25-12';
+    input.setAttribute('aria-label', 'Dates of special word ' + (i + 1) + ', day-month');
+    input.value = sw.dates.map(function (k) { return k.slice(3) + '-' + k.slice(0, 2); }).join(', ');
+    input.addEventListener('change', function () {
+      var parts = input.value.split(/[,;\s]+/).filter(Boolean), dates = [];
+      for (var j = 0; j < parts.length; j++) {
+        var m = /^(\d{1,2})[-\/.](\d{1,2})$/.exec(parts[j]);
+        var key = m && WC.dateKey(+m[2], +m[1]);
+        if (!key) { flash('"' + parts[j] + '" is not a date. Write day-month, like 14-03.'); return; }
+        if (dates.indexOf(key) === -1) dates.push(key);
+      }
+      if (dates.length > WC.SPECIAL_DATES) { flash('A special word can have at most ' + WC.SPECIAL_DATES + ' dates.'); return; }
+      sw.dates = dates;
+      changed();
+      render();
+    });
+    return input;
   }
 
   function syncRule() {
@@ -390,6 +444,10 @@
     if (dotRows && dotRows < 4) list.push('Only ' + dotRows + ' of the 4 minute-dot phrases have dots (fill in all 4, or none).');
     var dayRows = design.words.slice(25, 32).filter(function (w) { return w.length; }).length;
     if (dayRows && dayRows < 7) list.push('Only ' + dayRows + ' of the 7 days have letters (fill in all 7, or none).');
+    design.special.forEach(function (sw, i) {
+      if (sw.leds.length && !sw.dates.length) list.push('Special word ' + (i + 1) + ' has letters but no date.');
+      if (!sw.leds.length && sw.dates.length) list.push('Special word ' + (i + 1) + ' has dates but no letters.');
+    });
     return list;
   }
 
@@ -448,7 +506,7 @@
       input.select();
     } else if (step === 'words') {
       if (selectedPhrase === null) { flash('First choose a phrase from the list.'); return; }
-      var w = design.words[selectedPhrase], i = w.indexOf(l);
+      var w = rowLeds(selectedPhrase), i = w.indexOf(l);
       if (i !== -1) w.splice(i, 1);
       else if (w.length >= MAX_PER_WORD) { flash('A phrase can light at most ' + MAX_PER_WORD + ' letters.'); return; }
       else w.push(l);
@@ -591,8 +649,24 @@
       '  layout_revision: ' + d.layout_revision + '\n';
   }
 
-  function copyHomeAssistant() {
-    var text = homeAssistantAction(), box = $('#wcd-ha-text');
+  // The special words as a second action (firmware 1.9.0 and later).
+  function specialAction() {
+    var leds = [], dates = [];
+    design.special.forEach(function (sw) {
+      for (var i = 0; i < MAX_PER_WORD; i++) leds.push(i < sw.leds.length ? sw.leds[i] : -1);
+      for (i = 0; i < WC.SPECIAL_DATES; i++) {
+        var k = sw.dates[i];
+        dates.push(k ? parseInt(k.slice(0, 2), 10) * 100 + parseInt(k.slice(3), 10) : 0);
+      }
+    });
+    return 'action: esphome.word_clock_xxxxxx_set_special_words\n' +
+      'data:\n' +
+      '  special_leds: [' + leds.join(', ') + ']\n' +
+      '  special_dates: [' + dates.join(', ') + ']\n';
+  }
+
+  function copyHomeAssistant(special) {
+    var text = special ? specialAction() : homeAssistantAction(), box = $('#wcd-ha-text');
     box.value = text;
     box.hidden = false;
     var done = function () { flash('Copied. Paste it in Home Assistant and replace xxxxxx with your clock\'s code.'); };
@@ -798,7 +872,8 @@
     });
     $('#wcd-clear-phrase').addEventListener('click', function () {
       if (selectedPhrase === null) return;
-      design.words[selectedPhrase] = [];
+      if (selectedPhrase >= SPECIAL_ROW) design.special[selectedPhrase - SPECIAL_ROW].leds = [];
+      else design.words[selectedPhrase] = [];
       changed();
       render();
     });
@@ -824,6 +899,8 @@
     root.querySelectorAll('[data-time]').forEach(function (b) {
       b.addEventListener('click', function () { $('#wcd-time').value = b.dataset.time; render(); });
     });
+    var specialDay = $('#wcd-special-day');
+    specialDay.addEventListener('change', function () { previewSpecial = specialDay.checked; render(); });
 
     // Step 5: send
     var customer = $('#wcd-customer'), emailAddress = $('#wcd-email-address'), order = $('#wcd-order');
@@ -839,7 +916,8 @@
     clock.addEventListener('change', function () { clock.value = design.clock; });
     $('#wcd-confirm').addEventListener('change', updateSendButtons);
     $('#wcd-download').addEventListener('click', function () { if (confirmed()) download(); });
-    $('#wcd-ha-copy').addEventListener('click', copyHomeAssistant);
+    $('#wcd-ha-copy').addEventListener('click', function () { copyHomeAssistant(false); });
+    $('#wcd-ha-special').addEventListener('click', function () { copyHomeAssistant(true); });
     $('#wcd-email').addEventListener('click', email);
 
     syncRule();
