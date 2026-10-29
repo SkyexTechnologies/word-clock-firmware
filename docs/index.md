@@ -25,11 +25,10 @@ of letters shows the day of the week. The words depend on the language of the
 letter grid.
 
 Choose a language to see what the clock shows right now. These are example
-grids: you can also [design your own letter grid](design-your-own.html),
-starting from any of them or from an empty grid, so your clock can speak any
-language. To try other times, use step 4 of the designer. The colour picker
-only changes this picture; on your clock you set the colour on its web page
-or in Home Assistant.
+grids: when you order a clock at [letterklok.nl](https://letterklok.nl), you
+design your own, starting from any of them or from an empty grid, so your
+clock can speak any language. The colour picker only changes this picture; on
+your clock you set the colour on its web page or in Home Assistant.
 
 <div id="wcl" class="wcd wcl" data-layouts="{{ '/layouts/' | relative_url }}">
   <div class="wcd-chips wcl-langs" role="group" aria-label="Language of the letter grid">
@@ -77,7 +76,6 @@ or in Home Assistant.
 | Install a firmware update | [Updating the firmware](updating.html) |
 | Solve a problem | [Troubleshooting](troubleshooting.html) |
 | See what's possible | [Examples](examples.html) |
-| Design my own letter grid | [Design your own](design-your-own.html) |
 
 ## Features
 

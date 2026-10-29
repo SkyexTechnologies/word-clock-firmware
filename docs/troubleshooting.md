@@ -82,15 +82,14 @@ light up; the letters on the clock stay the same.
 You don't need Home Assistant for this. For safety, the clock only accepts a
 layout in the first 15 minutes after you plug it in.
 
-1. Open your design in the [designer](design-your-own.html): in step 1, choose
-   **Open it** and select the design file you sent us. Make your correction.
-2. In step 5, click **Download only** to save the corrected design file.
-3. Unplug the clock and plug it back in. Restarting it from its web page or
+1. Email us at [info@letterklok.nl](mailto:info@letterklok.nl) what is wrong,
+   with your order number. We send you a corrected design file.
+2. Unplug the clock and plug it back in. Restarting it from its web page or
    Home Assistant doesn't count.
-4. Within 15 minutes, open `http://word-clock-xxxxxx.local/layout` on a
+3. Within 15 minutes, open `http://word-clock-xxxxxx.local/layout` on a
    computer or phone on the same Wi-Fi network (or `http://<ip-address>/layout`;
    see [Getting started](getting-started.html)).
-5. Choose the design file and click **Upload**. The clock restarts and shows
+4. Choose the design file and click **Upload**. The clock restarts and shows
    the new layout. Your settings stay as they were.
 
 If the page says uploading is closed, unplug the clock, plug it back in and
@@ -100,17 +99,16 @@ try again.
 
 Your clock must be added to Home Assistant.
 
-1. Open your design in the [designer](design-your-own.html): in step 1, choose
-   **Open it** and select the design file you sent us. Make your correction.
-2. In step 5, open **Already have your clock? Apply a corrected design through
-   Home Assistant** and click **Copy for Home Assistant**.
-3. In Home Assistant, go to **Settings → Developer tools → Actions** and switch
+1. Email us at [info@letterklok.nl](mailto:info@letterklok.nl) what is wrong,
+   with your order number, and that you use Home Assistant. We send you the
+   corrected design as text for Home Assistant.
+2. In Home Assistant, go to **Settings → Developer tools → Actions** and switch
    to **YAML mode**. Paste the text.
-4. Replace `xxxxxx` in the first line with the six characters of your clock's
+3. Replace `xxxxxx` in the first line with the six characters of your clock's
    name (as in `word-clock-xxxxxx.local`). It then looks like this:
 
    ![The Actions screen in Home Assistant in YAML mode, with the set_word_layout action pasted]({{ '/images/ha-actions.png' | relative_url }}){: .screenshot-wide }
-5. Click **Perform action**, then restart the clock with **Restart Word Clock**.
+4. Click **Perform action**, then restart the clock with **Restart Word Clock**.
    The text includes your special words and fun phrases, if your design has
    them.
 

@@ -1,6 +1,8 @@
 /*
  * Word clock grid designer (design-your-own.md), in five steps: start grid,
- * letters, words, check, send.
+ * letters, words, check, send. Its markup is _includes/designer.html; the shop
+ * plugin (shop/wordclock-designer/) uses both with data-mode="shop" on #wcd,
+ * where step 5 adds the design to the cart instead of emailing it.
  *
  * A design is a factory layout file (format 2, as site/layouts/*-layout.json in the
  * development repository) plus the letters of the grid. Word table rows:
@@ -30,9 +32,9 @@
   var CAP_PER_PITCH = 23.2 * 0.716;
   var PITCH_MM = 23.2;
   // The front plate is 300 mm square; the outer letters' centres are 116 mm
-  // from its middle (word_clock_config.yaml in word-clock-dxf-generator).
+  // from its middle (dxf-generator/word_clock_config.yaml).
   var PLATE_MM = 300, OUTER_CENTRE_MM = 116;
-  // The front plate's font (word-clock-dxf-generator), as in .wcd-cell.
+  // The front plate's font (dxf-generator), as in .wcd-cell.
   var PLATE_FONT = '"Arial Unicode MS", Arial, "Word Clock Symbols", "Helvetica Neue", Helvetica, sans-serif';
   // Warn when two neighbouring letters come closer than this on the plate.
   var CLEARANCE_MM = 1;
@@ -45,41 +47,44 @@
   var MINUTE_NAMES = ['on the hour', '5 past', '10 past', 'quarter past', '20 past', '25 past',
     'half past', '25 to', '20 to', 'quarter to', '10 to', '5 to'];
 
-  var led = WC.led, pos = WC.pos, cleanLetter = WC.cleanLetter;
+  var led = WC.led, pos = WC.pos, cleanLetter = WC.cleanLetter, t = WC.t;
   function clock(h, m) { return h + ':' + String(m).padStart(2, '0'); }
 
-  // Words step: phrases in groups. {group, label, hint, row, phrase (minute
-  // phrases), optional, dots}
-  var PHRASES = [{ group: 'Opening words (optional)', label: 'Opening words', hint: 'e.g. IT IS', row: 0, optional: true }];
-  for (var m = 0; m < 12; m++) {
-    PHRASES.push({ group: 'Minutes', label: 'x:' + String(m * 5).padStart(2, '0'), hint: MINUTE_NAMES[m],
-      row: 1 + m, phrase: m, optional: m === 0 });
-    if (m === 0) PHRASES[PHRASES.length - 1].hint = "on the hour, e.g. O'CLOCK (may stay empty)";
-  }
-  for (var h = 1; h <= 12; h++) {
-    PHRASES.push({ group: 'Hours', label: h + " o'clock", row: 13 + (h % 12) });
-  }
-  for (h = 1; h <= 12; h++) {
-    PHRASES.push({ group: 'Hours on the full hour (optional)', label: h + " o'clock at " + clock(h, 0),
-      hint: 'only if different, like German EIN UHR', row: 37 + (h % 12), optional: true });
-  }
-  [1, 2, 3, 4, 5, 6, 0].forEach(function (d) { PHRASES.push({ group: 'Days (optional)', label: DAYS[d], row: 25 + d, optional: true }); });
-  for (var n = 1; n <= 4; n++) {
-    PHRASES.push({ group: 'Minute dots (optional)', label: n + ' extra minute' + (n > 1 ? 's' : ''),
-      hint: 'e.g. ' + clock(4, 20 + n), row: 32 + n, dots: true, optional: true });
-  }
   // Special words: rows from SPECIAL_ROW on stand for design.special[i].
   var SPECIAL_ROW = 100;
-  for (n = 0; n < WC.SPECIAL_WORDS; n++) {
-    PHRASES.push({ group: 'Special words (optional)', label: 'Special word ' + (n + 1),
-      row: SPECIAL_ROW + n, special: n, optional: true });
-  }
-
   // Fun phrases: rows from FUN_ROW on stand for design.fun[i].
   var FUN_ROW = 200;
-  for (n = 0; n < WC.FUN_PHRASES; n++) {
-    PHRASES.push({ group: 'Fun phrases (optional)', label: 'Fun phrase ' + (n + 1),
-      row: FUN_ROW + n, fun: n, optional: true });
+
+  // Words step: phrases in groups. {group, label, hint, row, phrase (minute
+  // phrases), optional, dots}. Made in init, in the page's language.
+  var PHRASES = [];
+  function makePhrases() {
+    PHRASES = [{ group: t('Opening words (optional)'), label: t('Opening words'), hint: t('e.g. IT IS'), row: 0, optional: true }];
+    for (var m = 0; m < 12; m++) {
+      PHRASES.push({ group: t('Minutes'), label: 'x:' + String(m * 5).padStart(2, '0'), hint: t(MINUTE_NAMES[m]),
+        row: 1 + m, phrase: m, optional: m === 0 });
+      if (m === 0) PHRASES[PHRASES.length - 1].hint = t("on the hour, e.g. O'CLOCK (may stay empty)");
+    }
+    for (var h = 1; h <= 12; h++) {
+      PHRASES.push({ group: t('Hours'), label: t("{h} o'clock", { h: h }), row: 13 + (h % 12) });
+    }
+    for (h = 1; h <= 12; h++) {
+      PHRASES.push({ group: t('Hours on the full hour (optional)'), label: t("{h} o'clock at {time}", { h: h, time: clock(h, 0) }),
+        hint: t('only if different, like German EIN UHR'), row: 37 + (h % 12), optional: true });
+    }
+    [1, 2, 3, 4, 5, 6, 0].forEach(function (d) { PHRASES.push({ group: t('Days (optional)'), label: t(DAYS[d]), row: 25 + d, optional: true }); });
+    for (var n = 1; n <= 4; n++) {
+      PHRASES.push({ group: t('Minute dots (optional)'), label: t(n > 1 ? '{n} extra minutes' : '{n} extra minute', { n: n }),
+        hint: t('e.g. {time}', { time: clock(4, 20 + n) }), row: 32 + n, dots: true, optional: true });
+    }
+    for (n = 0; n < WC.SPECIAL_WORDS; n++) {
+      PHRASES.push({ group: t('Special words (optional)'), label: t('Special word {n}', { n: n + 1 }),
+        row: SPECIAL_ROW + n, special: n, optional: true });
+    }
+    for (n = 0; n < WC.FUN_PHRASES; n++) {
+      PHRASES.push({ group: t('Fun phrases (optional)'), label: t('Fun phrase {n}', { n: n + 1 }),
+        row: FUN_ROW + n, fun: n, optional: true });
+    }
   }
 
   // Step 3 tab of a phrase: time words, days and dots, special words, fun.
@@ -236,6 +241,8 @@
   var wordsTab = 'time';
   var step = 'start', selectedPhrase = null, selectedCell = null, currentDay = 3, previewSpecial = -1;
   var root, gridEl;
+  // In the shop the name, email and order number come from the checkout.
+  var shop = false;
 
   /* ---------- clock logic (same rules as the firmware) ---------- */
   function rowsFor(hour, minute) { return WC.rowsFor(design, hour, minute); }
@@ -285,10 +292,10 @@
         if (!a) continue;
         var below = r + 1 < SIZE ? main(r + 1, c) : '', right = c + 1 < SIZE ? main(r, c + 1) : '';
         if (below && PITCH_MM - size * (extent(a).bottom + extent(below).top) < CLEARANCE_MM) {
-          found.push(a + ' above ' + below + ' (column ' + (c + 1) + ')');
+          found.push(t('{a} above {b} (column {n})', { a: a, b: below, n: c + 1 }));
         }
         if (right && PITCH_MM - size * (extent(a).right + extent(right).left) < CLEARANCE_MM) {
-          found.push(a + right + ' (row ' + (r + 1) + ')');
+          found.push(t('{pair} (row {n})', { pair: a + right, n: r + 1 }));
         }
       }
     }
@@ -299,9 +306,9 @@
     var box = $('#wcd-size-warning'), found = touchingLetters();
     box.hidden = !found.length;
     if (!found.length) return;
-    box.textContent = 'At ' + design.letterSize + ' mm these letters may touch on the plate: ' +
-      found.slice(0, 5).join(', ') + (found.length > 5 ? ' and ' + (found.length - 5) + ' more' : '') +
-      '. Change one of these letters, or change the layout so they aren\'t next to each other.';
+    box.textContent = t('At {size} mm these letters may touch on the plate: {list}. Change one of these letters, ' +
+      'or change the layout so they aren\'t next to each other.', { size: design.letterSize,
+      list: found.slice(0, 5).join(', ') + (found.length > 5 ? t(' and {n} more', { n: found.length - 5 }) : '') });
   }
 
   // Step 5 shows the whole front plate: the black border around the letters
@@ -416,8 +423,8 @@
       b.innerHTML = '<span class="wcd-phrase-label"></span><span class="wcd-phrase-count"></span><span class="wcd-phrase-text"></span>';
       b.children[0].textContent = ph.label + (ph.hint ? ' · ' + ph.hint : '');
       b.children[1].textContent = leds.length + '/' + MAX_PER_WORD;
-      b.children[2].textContent = ph.dots ? (leds.length ? leds.length + ' lit' : '—')
-        : wordText(leds) || (ph.optional ? 'empty' : '—');
+      b.children[2].textContent = ph.dots ? (leds.length ? t('{n} lit', { n: leds.length }) : '—')
+        : wordText(leds) || (ph.optional ? t('empty') : '—');
       b.addEventListener('click', function () { selectedPhrase = ph.row; render(); });
       item.appendChild(b);
       if (ph.phrase !== undefined && ph.phrase > 0) {
@@ -433,8 +440,8 @@
           render();
         });
         label.appendChild(box);
-        label.appendChild(document.createTextNode(' next hour'));
-        label.title = 'Tick when this phrase names the coming hour, like "twenty-five to FIVE" at 4:35';
+        label.appendChild(document.createTextNode(' ' + t('next hour')));
+        label.title = t('Tick when this phrase names the coming hour, like "twenty-five to FIVE" at 4:35');
         item.appendChild(label);
       }
       if (ph.special !== undefined) item.appendChild(specialDates(ph.special));
@@ -443,8 +450,8 @@
     });
     var current = PHRASES.filter(function (p) { return p.row === selectedPhrase; })[0];
     $('#wcd-words-hint').textContent = current
-      ? 'Now click the letters for "' + current.label + '" in the grid. Click a letter again to remove it.'
-      : 'Choose a phrase from the list, then click its letters in the grid.';
+      ? t('Now click the letters for "{label}" in the grid. Click a letter again to remove it.', { label: current.label })
+      : t('Choose a phrase from the list, then click its letters in the grid.');
   }
 
   // The dates field of special word i: day-month, comma separated
@@ -454,18 +461,18 @@
     var input = document.createElement('input');
     input.type = 'text';
     input.className = 'wcd-input wcd-special-dates';
-    input.placeholder = 'Dates, day-month: 14-03, 25-12';
-    input.setAttribute('aria-label', 'Dates of special word ' + (i + 1) + ', day-month');
+    input.placeholder = t('Dates, day-month: 14-03, 25-12');
+    input.setAttribute('aria-label', t('Dates of special word {n}, day-month', { n: i + 1 }));
     input.value = sw.dates.map(function (k) { return k.slice(3) + '-' + k.slice(0, 2); }).join(', ');
     input.addEventListener('change', function () {
       var parts = input.value.split(/[,;\s]+/).filter(Boolean), dates = [];
       for (var j = 0; j < parts.length; j++) {
         var m = /^(\d{1,2})[-\/.](\d{1,2})$/.exec(parts[j]);
         var key = m && WC.dateKey(+m[2], +m[1]);
-        if (!key) { flash('"' + parts[j] + '" is not a date. Write day-month, like 14-03.'); return; }
+        if (!key) { flash(t('"{text}" is not a date. Write day-month, like 14-03.', { text: parts[j] })); return; }
         if (dates.indexOf(key) === -1) dates.push(key);
       }
-      if (dates.length > WC.SPECIAL_DATES) { flash('A special word can have at most ' + WC.SPECIAL_DATES + ' dates.'); return; }
+      if (dates.length > WC.SPECIAL_DATES) { flash(t('A special word can have at most {n} dates.', { n: WC.SPECIAL_DATES })); return; }
       sw.dates = dates;
       changed();
       render();
@@ -485,7 +492,7 @@
       check.checked = f.days[d];
       check.addEventListener('change', function () { f.days[d] = check.checked; changed(); render(); });
       label.appendChild(check);
-      label.appendChild(document.createTextNode(' ' + DAYS[d].slice(0, 2)));
+      label.appendChild(document.createTextNode(' ' + t(DAYS[d].slice(0, 2))));
       days.appendChild(label);
     });
     box.appendChild(days);
@@ -495,7 +502,7 @@
       input.className = 'wcd-input wcd-fun-time';
       input.value = f[key];
       input.addEventListener('change', function () { f[key] = input.value; changed(); render(); });
-      label.appendChild(document.createTextNode(key === 'from' ? 'From ' : ' to '));
+      label.appendChild(document.createTextNode(key === 'from' ? t('From') + ' ' : ' ' + t('to') + ' '));
       label.appendChild(input);
       box.appendChild(label);
     });
@@ -535,7 +542,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'wcd-chip';
-      b.textContent = wordText(f.leds).replace(/^IT IS /, '') + ' (' + DAYS[day].slice(0, 3) + ' ' + f.from + ')';
+      b.textContent = wordText(f.leds).replace(/^IT IS /, '') + ' (' + t(DAYS[day].slice(0, 3)) + ' ' + f.from + ')';
       b.addEventListener('click', function () {
         currentDay = day;
         $('#wcd-time').value = f.from;
@@ -560,21 +567,21 @@
   function problems() {
     var list = [];
     PHRASES.forEach(function (ph) {
-      if (!ph.optional && ph.row >= 1 && ph.row <= 24 && !design.words[ph.row].length) list.push(ph.label + ' has no letters yet.');
+      if (!ph.optional && ph.row >= 1 && ph.row <= 24 && !design.words[ph.row].length) list.push(t('{label} has no letters yet.', { label: ph.label }));
     });
     var dotRows = design.words.slice(33, 37).filter(function (w) { return w.length; }).length;
-    if (dotRows && dotRows < 4) list.push('Only ' + dotRows + ' of the 4 minute-dot phrases have dots (fill in all 4, or none).');
+    if (dotRows && dotRows < 4) list.push(t('Only {n} of the 4 minute-dot phrases have dots (fill in all 4, or none).', { n: dotRows }));
     var dayRows = design.words.slice(25, 32).filter(function (w) { return w.length; }).length;
-    if (dayRows && dayRows < 7) list.push('Only ' + dayRows + ' of the 7 days have letters (fill in all 7, or none).');
+    if (dayRows && dayRows < 7) list.push(t('Only {n} of the 7 days have letters (fill in all 7, or none).', { n: dayRows }));
     design.special.forEach(function (sw, i) {
-      if (sw.leds.length && !sw.dates.length) list.push('Special word ' + (i + 1) + ' has letters but no date.');
-      if (!sw.leds.length && sw.dates.length) list.push('Special word ' + (i + 1) + ' has dates but no letters.');
+      if (sw.leds.length && !sw.dates.length) list.push(t('Special word {n} has letters but no date.', { n: i + 1 }));
+      if (!sw.leds.length && sw.dates.length) list.push(t('Special word {n} has dates but no letters.', { n: i + 1 }));
     });
     design.fun.forEach(function (f, i) {
       if (!f.leds.length) return;
-      if (!f.days.some(Boolean)) list.push('Fun phrase ' + (i + 1) + ' has no days.');
-      if (!f.from || !f.to) list.push('Fun phrase ' + (i + 1) + ' needs a start and end time.');
-      else if (f.from === f.to) list.push('Fun phrase ' + (i + 1) + ' starts and ends at the same time.');
+      if (!f.days.some(Boolean)) list.push(t('Fun phrase {n} has no days.', { n: i + 1 }));
+      if (!f.from || !f.to) list.push(t('Fun phrase {n} needs a start and end time.', { n: i + 1 }));
+      else if (f.from === f.to) list.push(t('Fun phrase {n} starts and ends at the same time.', { n: i + 1 }));
     });
     return list;
   }
@@ -589,24 +596,25 @@
     for (i = ticked[0]; i < 12; i++) if (!design.nextHour[i]) block = false;
     if (block) return null;
     var names = ticked.map(function (i) { return 'x:' + String(i * 5).padStart(2, '0'); });
-    var list = names.length > 1 ? names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1] : names[0];
-    return 'Next hour is ticked for ' + list + ', but not for every phrase after it. Languages usually ' +
+    var list = names.length > 1 ? names.slice(0, -1).join(', ') + ' ' + t('and') + ' ' + names[names.length - 1] : names[0];
+    return t('Next hour is ticked for {list}, but not for every phrase after it. Languages usually ' +
       'switch to the next hour once and keep saying it until the full hour. Check in step 4 that the ' +
-      'clock says the right hour.';
+      'clock says the right hour.', { list: list });
   }
 
   function renderCheck(sel) {
     var found = problems(), warning = hourRuleWarning(), box = $(sel);
     box.innerHTML = '';
     if (!found.length) {
-      var extras = [['opening words', design.words[0].length], ['weekdays', design.words.slice(25, 32).some(function (w) { return w.length; })],
-        ['minute dots', design.words.slice(33, 37).some(function (w) { return w.length; })]];
+      var extras = [[t('opening words'), design.words[0].length], [t('weekdays'), design.words.slice(25, 32).some(function (w) { return w.length; })],
+        [t('minute dots'), design.words.slice(33, 37).some(function (w) { return w.length; })]];
       var without = extras.filter(function (e) { return !e[1]; }).map(function (e) { return e[0]; });
-      box.textContent = 'Your design is complete.' + (without.length ? ' It has no ' + without.join(' and ') + ' (optional).' : '');
+      box.textContent = t('Your design is complete.') +
+        (without.length ? ' ' + t('It has no {list} (optional).', { list: without.join(' ' + t('and') + ' ') }) : '');
       box.className = 'wcd-check ' + (warning ? 'is-warning' : 'is-ok');
     } else {
       box.className = 'wcd-check is-warning';
-      box.appendChild(document.createTextNode('Still to do (step 3, Words):'));
+      box.appendChild(document.createTextNode(t('Still to do (step 3, Words):')));
       var ul = document.createElement('ul');
       found.forEach(function (p) { var li = document.createElement('li'); li.textContent = p; ul.appendChild(li); });
       box.appendChild(ul);
@@ -627,16 +635,16 @@
       selectedCell = l;
       var input = $('#wcd-letter');
       input.value = design.letters[p.row][p.col];
-      $('#wcd-letter-pos').textContent = 'Row ' + (p.row + 1) + ', column ' + (p.col + 1);
+      $('#wcd-letter-pos').textContent = t('Row {row}, column {col}', { row: p.row + 1, col: p.col + 1 });
       // Without scrolling: the field may be below the grid, and the page
       // would jump to it at every square.
       input.focus({ preventScroll: true });
       input.select();
     } else if (step === 'words') {
-      if (selectedPhrase === null) { flash('First choose a phrase from the list.'); return; }
+      if (selectedPhrase === null) { flash(t('First choose a phrase from the list.')); return; }
       var w = rowLeds(selectedPhrase), i = w.indexOf(l);
       if (i !== -1) w.splice(i, 1);
-      else if (w.length >= MAX_PER_WORD) { flash('A phrase can light at most ' + MAX_PER_WORD + ' letters.'); return; }
+      else if (w.length >= MAX_PER_WORD) { flash(t('A phrase can light at most {n} letters.', { n: MAX_PER_WORD })); return; }
       else w.push(l);
       changed();
     }
@@ -682,6 +690,7 @@
   function validEmail(text) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text); }
 
   function missingDetail() {
+    if (shop) return null;
     if (!design.customer) return ['#wcd-customer', 'Fill in your name first.'];
     if (!validEmail(design.email)) return ['#wcd-email-address', 'Fill in a valid email address first.'];
     if (!design.order) return ['#wcd-order', 'Fill in your order number first.'];
@@ -692,7 +701,7 @@
     var missing = missingDetail();
     if (missing) { flash(missing[1]); $(missing[0]).focus(); return false; }
     if ($('#wcd-confirm').checked) return true;
-    flash('First tick the box to confirm your design is final.');
+    flash(t('First tick the box to confirm your design is final.'));
     return false;
   }
 
@@ -700,6 +709,28 @@
     var ok = !missingDetail() && $('#wcd-confirm').checked;
     $('#wcd-email').disabled = !ok;
     $('#wcd-download').disabled = !ok;
+    $('#wcd-cart').disabled = !ok;
+    $('#wcd-download-copy').disabled = !ok;
+  }
+
+  // Shop: put the design and the number of clocks into the product's
+  // add-to-cart form (the plugin hides it) and submit it.
+  function addToCart() {
+    if (!confirmed()) return;
+    if (problems().length) { flash(t('First finish your design: see the list above.')); return; }
+    var form = document.querySelector('form.cart');
+    var field = form && form.querySelector('[name="wordclock_design"]');
+    if (!field) { flash(t('This page can\'t take orders. Please try again later.')); return; }
+    field.value = formatDesign(exportDesign());
+    var sensor = form.querySelector('[name="wordclock_light_sensor"]');
+    if (sensor) sensor.value = $('#wcd-light-sensor').checked ? 'yes' : '';
+    var quantity = form.querySelector('input.qty');
+    if (quantity) quantity.value = Math.max(1, parseInt($('#wcd-quantity').value, 10) || 1);
+    var button = form.querySelector('.single_add_to_cart_button');
+    $('#wcd-cart').disabled = true;
+    if (form.requestSubmit) form.requestSubmit(button || undefined);
+    else if (button) button.click();
+    else form.submit();
   }
 
   function download() {
@@ -891,13 +922,26 @@
     root = document.getElementById('wcd');
     if (!root) return;
     if (root.dataset.layouts) layoutsUrl = root.dataset.layouts;
+    shop = root.dataset.mode === 'shop';
+    WC.lang = root.dataset.lang || 'en';
+    makePhrases();
+    // Shop: the light sensor option, "available" with its extra price or
+    // "soon" (shown, but can't be ticked); set on the product.
+    var sensor = root.dataset.lightSensor;
+    if (shop && sensor) {
+      $('#wcd-light-sensor-option').hidden = false;
+      $('#wcd-light-sensor-option').classList.toggle('is-soon', sensor !== 'available');
+      $('#wcd-light-sensor').disabled = sensor !== 'available';
+      $('#wcd-light-sensor-soon').hidden = sensor === 'available';
+      $('#wcd-light-sensor-price').textContent = sensor === 'available' ? ' (+ ' + root.dataset.lightSensorPrice + ')' : '';
+    }
     gridEl = $('#wcd-grid');
     for (var r = 0; r < SIZE; r++) {
       for (var c = 0; c < SIZE; c++) {
         var b = document.createElement('button');
         b.type = 'button';
         b.dataset.led = led(r, c);
-        b.setAttribute('aria-label', 'Row ' + (r + 1) + ', column ' + (c + 1));
+        b.setAttribute('aria-label', t('Row {row}, column {col}', { row: r + 1, col: c + 1 }));
         b.addEventListener('click', function (e) { onCell(parseInt(e.currentTarget.dataset.led, 10)); });
         gridEl.appendChild(b);
       }
@@ -917,17 +961,17 @@
     root.querySelectorAll('[data-example]').forEach(function (b) {
       b.addEventListener('click', function () {
         var key = b.dataset.example;
-        if (edited && !confirm('Start from this grid? Your current design is replaced.')) return;
+        if (edited && !confirm(t('Start from this grid? Your current design is replaced.'))) return;
         (key === 'empty' ? Promise.resolve(emptyDesign()) : loadExample(key)).then(function (next) {
           replaceDesign(next);
           // Keep the chosen letter size when switching grids.
           next.letterSize = design.letterSize;
           lastExample = key;
           openedRevision = null;
-          flash(key === 'empty' ? 'Empty grid loaded. Continue with step 2.'
+          flash(t(key === 'empty' ? 'Empty grid loaded. Continue with step 2.'
             : next.fun.some(function (f) { return f.leds.length; })
               ? 'Grid loaded, with fun phrases: try them in step 4.'
-              : 'Grid loaded. Continue with step 2, or change it as you like.');
+              : 'Grid loaded. Continue with step 2, or change it as you like.'));
         }).catch(function (err) { flash(err.message); });
       });
     });
@@ -938,8 +982,11 @@
       file.text().then(function (text) {
         replaceDesign(importDesign(JSON.parse(text)));
         edited = true;
-        openedRevision = design.layoutRevision;
-        flash('Design opened.');
+        // In the shop an opened design is the start of a new order, not a
+        // correction of one already sent.
+        if (shop) design.layoutRevision = 1;
+        openedRevision = shop ? null : design.layoutRevision;
+        flash(t('Design opened.'));
       }).catch(function (err) { flash(err.message); });
       e.target.value = '';
     });
@@ -963,7 +1010,7 @@
         // Emoji and other symbols may be missing from the plate font.
         input.value = design.letters[p.row][p.col];
         input.select();
-        flash('Only letters, numbers and the symbols below can be used. Click a symbol to add it.');
+        flash(t('Only letters, numbers and the symbols below can be used. Click a symbol to add it.'));
         return;
       }
       if (chars.length === 1 && APOSTROPHES.indexOf(last) !== -1) {
@@ -991,12 +1038,12 @@
       b.className = 'wcd-chip';
       b.dataset.symbol = s[0];
       b.textContent = WC.textStyle(s[0]);
-      b.setAttribute('aria-label', s[1]);
+      b.setAttribute('aria-label', t(s[1]));
       symbols.appendChild(b);
     });
     root.querySelectorAll('[data-symbol]').forEach(function (b) {
       b.addEventListener('click', function () {
-        if (selectedCell === null) { flash('First click a square in the grid.'); return; }
+        if (selectedCell === null) { flash(t('First click a square in the grid.')); return; }
         var p = pos(selectedCell);
         design.letters[p.row][p.col] = b.dataset.symbol;
         changed();
@@ -1042,7 +1089,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'wcd-chip' + (d === currentDay ? ' is-active' : '');
-      b.textContent = DAYS[d].slice(0, 3);
+      b.textContent = t(DAYS[d].slice(0, 3));
       b.addEventListener('click', function () {
         currentDay = d;
         days.querySelectorAll('button').forEach(function (x) { x.classList.toggle('is-active', x === b); });
@@ -1071,16 +1118,19 @@
     $('#wcd-download').addEventListener('click', function () { if (confirmed()) download(); });
     $('#wcd-ha-copy').addEventListener('click', copyHomeAssistant);
     $('#wcd-email').addEventListener('click', email);
+    $('#wcd-cart').addEventListener('click', addToCart);
+    $('#wcd-download-copy').addEventListener('click', function () { if (confirmed()) download(); });
 
     syncRule();
     setStep('start');
     // Step 1 shows the current time; follow the clock while it's open.
     setInterval(function () { if (step === 'start') render(); }, 10000);
-    // First visit: start with the English example grid.
+    // First visit: start with the example grid in the page's language.
     if (!stored) {
-      loadExample('english').then(function (next) {
+      var first = WC.lang === 'nl' ? 'dutch' : 'english';
+      loadExample(first).then(function (next) {
         replaceDesign(next);
-        lastExample = 'english';
+        lastExample = first;
       }).catch(function (err) { flash(err.message); });
     }
   }

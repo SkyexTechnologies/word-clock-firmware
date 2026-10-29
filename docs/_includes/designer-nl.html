@@ -1,0 +1,236 @@
+  <!-- Dutch translation of designer.html, used by the shop plugin only: the
+       same elements and attributes, only the texts differ (shop/build.py
+       checks this). Change both files together. -->
+  <ol class="wcd-steps">
+    <li><button type="button" class="wcd-step" data-step="start"><span>1</span> Start</button></li>
+    <li><button type="button" class="wcd-step" data-step="letters"><span>2</span> Letters</button></li>
+    <li><button type="button" class="wcd-step" data-step="words"><span>3</span> Woorden</button></li>
+    <li><button type="button" class="wcd-step" data-step="check"><span>4</span> Controleren</button></li>
+    <li><button type="button" class="wcd-step" data-step="send"><span>5</span> <span data-only="docs">Versturen</span><span data-only="shop">Bestellen</span></button></li>
+  </ol>
+
+  <div class="wcd-body">
+    <div class="wcd-grid" id="wcd-grid"></div>
+
+    <div class="wcd-side">
+      <div class="wcd-panel" data-step="start">
+        <h3 class="wcd-title">1. Kies een raster om mee te beginnen</h3>
+        <p>Kies het raster dat het dichtst bij je wens ligt. In de volgende
+        stappen kun je elke letter en elk woord aanpassen.</p>
+        <div class="wcd-cards">
+          <button type="button" class="wcd-card" data-example="english" lang="en"><strong>English</strong><span>IT IS TWENTY PAST FOUR</span></button>
+          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
+          <button type="button" class="wcd-card" data-example="german" lang="de"><strong>Deutsch</strong><span>ES IST ZWANZIG NACH VIER</span></button>
+          <button type="button" class="wcd-card" data-example="french" lang="fr"><strong>Français</strong><span>IL EST QUATRE HEURES VINGT</span></button>
+          <button type="button" class="wcd-card" data-example="spanish" lang="es"><strong>Español</strong><span>SON LAS CUATRO Y VEINTE</span></button>
+          <button type="button" class="wcd-card" data-example="portuguese" lang="pt"><strong>Português</strong><span>SÃO QUATRO E VINTE</span></button>
+          <button type="button" class="wcd-card" data-example="italian" lang="it"><strong>Italiano</strong><span>SONO LE QUATTRO E VENTI</span></button>
+          <button type="button" class="wcd-card" data-example="dutch" lang="nl"><strong>Nederlands</strong><span>HET IS TIEN VOOR HALF VIJF</span></button>
+          <button type="button" class="wcd-card" data-example="frisian" lang="fy"><strong>Frysk</strong><span>IT IS TSIEN FOAR HEALWEI FIIF</span></button>
+          <button type="button" class="wcd-card" data-example="limburgish" lang="li"><strong>Limburgs</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
+          <button type="button" class="wcd-card" data-example="drents" lang="drt"><strong>Drents</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
+          <button type="button" class="wcd-card" data-example="zeeuws" lang="zea"><strong>Zeeuws</strong><span>HET IS TIEN VOOR ALF VUUF</span></button>
+          <button type="button" class="wcd-card" data-example="swedish" lang="sv"><strong>Svenska</strong><span>KLOCKAN ÄR TJUGO ÖVER FYRA</span></button>
+          <button type="button" class="wcd-card" data-example="norwegian" lang="nb"><strong>Norsk</strong><span>KLOKKEN ER TI PÅ HALV FEM</span></button>
+          <button type="button" class="wcd-card" data-example="danish" lang="da"><strong>Dansk</strong><span>KLOKKEN ER TYVE OVER FIRE</span></button>
+          <button type="button" class="wcd-card" data-example="turkish" lang="tr"><strong>Türkçe</strong><span>SAAT DÖRT YİRMİ</span></button>
+          <button type="button" class="wcd-card" data-example="korean" lang="ko"><strong>한국어</strong><span>지금은 네 시 이십 분입니다</span></button>
+          <button type="button" class="wcd-card" data-example="japanese" lang="ja"><strong>日本語</strong><span>今は四時二十分です</span></button>
+          <button type="button" class="wcd-card" data-example="chinese" lang="zh"><strong>中文</strong><span>现在是四点二十分</span></button>
+          <button type="button" class="wcd-card wcd-card-empty" data-example="empty"><strong>Leeg raster</strong><span>Begin vanaf nul</span></button>
+        </div>
+        <p class="wcd-muted">Nu (<span id="wcd-start-time"></span>) toont dit raster: <strong id="wcd-start-shows"></strong></p>
+        <p class="wcd-muted">Eerder een ontwerp bewaard? <button type="button" class="wcd-link" id="wcd-open">Open het</button>.
+        <input type="file" id="wcd-file" accept=".json,application/json" hidden></p>
+        <div class="wcd-nav"><span></span><button type="button" class="btn btn-primary" data-go="next">Volgende: letters</button></div>
+      </div>
+
+      <div class="wcd-panel" data-step="letters" hidden>
+        <h3 class="wcd-title">2. Typ de letters</h3>
+        <p>Klik op een vakje in het raster en typ de letter. De cursor gaat
+        vanzelf naar het volgende vakje; met de pijltjestoetsen kan het ook.</p>
+        <label class="wcd-label" for="wcd-letter">Letter</label>
+        <input type="text" id="wcd-letter" class="wcd-input wcd-letter" autocomplete="off" autocapitalize="characters">
+        <p class="wcd-muted" id="wcd-letter-pos">Kies een vakje in het raster.</p>
+        <span class="wcd-label">Symbolen</span>
+        <div class="wcd-chips wcd-symbols" id="wcd-symbols" role="group" aria-label="Symbolen"></div>
+        <p class="wcd-muted">Andere symbolen en emoji kunnen niet gegraveerd worden; deze wel.</p>
+        <span class="wcd-label">Lettergrootte op je klok</span>
+        <div class="wcd-chips" role="group" aria-label="Lettergrootte op je klok">
+          <button type="button" class="wcd-chip" data-letter-size="10">Extra klein (10 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="12">Klein (12 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="14">Middel (14 mm)</button>
+          <button type="button" class="wcd-chip" data-letter-size="16">Groot (16 mm)</button>
+        </div>
+        <p class="wcd-muted">Het raster toont de letters op deze grootte, in het lettertype van de frontplaat.</p>
+        <p class="wcd-attach" id="wcd-size-warning" role="status" hidden></p>
+        <ul class="wcd-tips">
+          <li>Typ <kbd>.</kbd> voor een minuutstip.</li>
+          <li>Typ een apostrof direct na een letter om ze samen in één vakje te
+          zetten, zoals de O' in O'CLOCK.</li>
+          <li>Vakjes die je niet nodig hebt voor de tijd mogen alles bevatten: een
+          naam, een boodschap, willekeurige letters of een symbool van hierboven.</li>
+        </ul>
+        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Terug</button><button type="button" class="btn btn-primary" data-go="next">Volgende: woorden</button></div>
+      </div>
+
+      <div class="wcd-panel" data-step="words" hidden>
+        <h3 class="wcd-title">3. Kies de woorden</h3>
+        <div class="wcd-tabs" role="tablist" aria-label="Soort woorden">
+          <button type="button" class="wcd-tab" role="tab" data-tab="time">Tijd</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="extras">Dagen &amp; stippen</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="special">Speciale woorden</button>
+          <button type="button" class="wcd-tab" role="tab" data-tab="fun">Grappige teksten</button>
+        </div>
+        <div data-tab-text="extras" hidden>
+          <p>De letter voor de <strong>dag van de week</strong> en de vier
+          <strong>minuutstippen</strong> zijn niet verplicht: laat ze leeg als je
+          raster ze niet heeft. Gebruik je ze wel, vul dan alle zeven dagen of
+          alle vier stippen in.</p>
+        </div>
+        <div data-tab-text="special" hidden>
+          <p>Een <strong>speciaal woord</strong> is een naam of boodschap tussen
+          de letters, die op zijn datums de hele dag langzaam pulserend oplicht,
+          bijvoorbeeld op een verjaardag of trouwdag. Klik de letters aan en typ
+          tot vier datums als dag-maand, zoals 14-03.</p>
+        </div>
+        <div data-tab-text="fun" hidden>
+          <p>Een <strong>grappige tekst</strong> verschijnt in plaats van de tijd
+          op de dagen en tussen de tijden die je kiest, zoals IT IS BEER O'CLOCK
+          op vrijdag van 17:00 tot 18:00. Klik al zijn letters aan, ook IT IS en
+          O'CLOCK als je die erbij wilt.</p>
+        </div>
+        <div data-tab-text="time">
+        <p>Klik voor elke zin in de lijst de letters aan die de klok laat
+        oplichten. Alleen de <strong>minuten</strong> en <strong>uren</strong>
+        zijn nodig; de openingswoorden en de uurwoorden voor het hele uur zijn
+        niet verplicht.</p>
+        <label class="wcd-label" for="wcd-rule">Wanneer noemt je taal het volgende uur?</label>
+        <select id="wcd-rule" class="wcd-input">
+          <option value="35">Vanaf x:35: Engels, Frans, Spaans, Portugees, Italiaans (4:35 = twenty-five to five)</option>
+          <option value="25">Vanaf x:25: Duits, Zweeds, Deens (4:25 = fünf vor halb fünf)</option>
+          <option value="20">Vanaf x:20: Nederlands, Fries, Noors (4:20 = tien voor half vijf)</option>
+          <option value="15">Vanaf x:15: Oost-Duits (4:15 = viertel fünf)</option>
+          <option value="never">Nooit: Koreaans, Japans, Chinees, Turks (4:40 = 네 시 사십 분, saat dört kırk)</option>
+          <option value="custom" disabled>Eigen keuze (per zin aangevinkt hieronder)</option>
+        </select>
+        </div>
+        <p class="wcd-muted" id="wcd-words-hint"></p>
+        <div class="wcd-phrases" id="wcd-phrases"></div>
+        <button type="button" class="btn" id="wcd-clear-phrase">Deze zin wissen</button>
+        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Terug</button><button type="button" class="btn btn-primary" data-go="next">Volgende: controleren</button></div>
+      </div>
+
+      <div class="wcd-panel" data-step="check" hidden>
+        <h3 class="wcd-title">4. Controleer je klok</h3>
+        <p>Probeer een paar tijden en dagen en lees wat de klok zegt. Je kunt
+        ook een plaatje van de klok op die tijd bewaren.</p>
+        <label class="wcd-label" for="wcd-time">Tijd</label>
+        <input type="time" id="wcd-time" class="wcd-input" value="09:47">
+        <div class="wcd-chips">
+          <button type="button" class="wcd-chip" data-time="03:00">3:00</button>
+          <button type="button" class="wcd-chip" data-time="07:15">7:15</button>
+          <button type="button" class="wcd-chip" data-time="04:20">4:20</button>
+          <button type="button" class="wcd-chip" data-time="04:35">4:35</button>
+          <button type="button" class="wcd-chip" data-time="09:47">9:47</button>
+          <button type="button" class="wcd-chip" data-time="12:55">12:55</button>
+        </div>
+        <span class="wcd-label">Dag</span>
+        <div class="wcd-chips" id="wcd-days"></div>
+        <div id="wcd-special-try" hidden>
+          <span class="wcd-label">Speciale woorden</span>
+          <div class="wcd-chips" id="wcd-special-chips"></div>
+        </div>
+        <div id="wcd-fun-try" hidden>
+          <span class="wcd-label">Grappige teksten</span>
+          <div class="wcd-chips" id="wcd-fun-chips"></div>
+        </div>
+        <span class="wcd-label">De klok toont</span>
+        <p class="wcd-output" id="wcd-phrase"></p>
+        <div class="wcd-check" id="wcd-check"></div>
+        <button type="button" class="btn" id="wcd-picture">Plaatje downloaden (JPEG)</button>
+        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Terug</button><button type="button" class="btn btn-primary" data-go="next"><span data-only="docs">Volgende: versturen</span><span data-only="shop">Volgende: bestellen</span></button></div>
+      </div>
+
+      <div class="wcd-panel" data-step="send" hidden>
+        <h3 class="wcd-title" data-only="docs">5. Verstuur je ontwerp</h3>
+        <h3 class="wcd-title" data-only="shop">5. Bestel je klok</h3>
+        <p>Dit is je frontplaat: 30 × 30 cm, met de letters in de grootte die je
+        koos. De zwarte rand van ongeveer 2,5 cm rond de letters hoort bij het
+        ontwerp.</p>
+        <div data-only="docs">
+        <div class="wcd-attach" role="note">
+          <strong>Gebruik de gegevens van je bestelling.</strong> Vul dezelfde naam
+          en hetzelfde e-mailadres in als bij je bestelling, en het
+          bestelnummer. Klopt het bestelnummer niet, dan gaat je klok niet in
+          productie. Alle drie de velden zijn verplicht. In onze
+          <a href="privacy.html">privacyverklaring</a> staat wat we ermee doen.
+        </div>
+        <label class="wcd-label" for="wcd-customer">Je naam</label>
+        <input type="text" id="wcd-customer" class="wcd-input" autocomplete="name" required aria-required="true">
+        <label class="wcd-label" for="wcd-email-address">Je e-mailadres</label>
+        <input type="email" id="wcd-email-address" class="wcd-input" autocomplete="email" required aria-required="true">
+        <label class="wcd-label" for="wcd-order">Bestelnummer</label>
+        <input type="text" id="wcd-order" class="wcd-input" required aria-required="true" placeholder="Uit je orderbevestiging">
+        <label class="wcd-label" for="wcd-clock">Nummer van de klok in je bestelling</label>
+        <input type="number" id="wcd-clock" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+        <p class="wcd-muted">Meer dan één klok besteld? Stuur een ontwerp per klok, genummerd
+        1, 2, 3 enzovoort. Krijgen meerdere klokken hetzelfde ontwerp, stuur het dan één keer en
+        zet in je e-mail voor hoeveel klokken het is.</p>
+        </div>
+        <div class="wcd-check" id="wcd-send-check"></div>
+        <p class="wcd-muted" data-only="docs">Ontwerpversie <strong id="wcd-revision"></strong>. Die gaat
+        één omhoog als je een eerder verstuurd ontwerp opent en aanpast.</p>
+        <label class="wcd-confirm">
+          <input type="checkbox" id="wcd-confirm">
+          <span>Ik heb mijn ontwerp in stap 4 gecontroleerd. Ik begrijp dat het niet meer
+          kan veranderen nadat ik <span data-only="docs">het verstuur</span><span data-only="shop">mijn klok bestel</span>.</span>
+        </label>
+        <div data-only="shop">
+          <label class="wcd-confirm wcd-option" id="wcd-light-sensor-option" hidden>
+            <input type="checkbox" id="wcd-light-sensor">
+            <span><strong>Lichtsensor</strong><span id="wcd-light-sensor-price"></span>: past de
+            helderheid automatisch aan het licht in de kamer aan. <em id="wcd-light-sensor-soon">Binnenkort beschikbaar.</em></span>
+          </label>
+          <label class="wcd-label" for="wcd-quantity">Aantal klokken met dit ontwerp</label>
+          <input type="number" id="wcd-quantity" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+          <div class="wcd-buttons">
+            <button type="button" class="btn btn-primary" id="wcd-cart" disabled>In winkelwagen</button>
+            <button type="button" class="btn" id="wcd-download-copy" disabled>Kopie bewaren</button>
+          </div>
+          <p class="wcd-muted">Je ontwerp gaat mee met je bestelling. Met een kopie kun je
+          later dezelfde klok nog eens bestellen: open hem dan in stap 1.</p>
+        </div>
+        <div data-only="docs">
+        <div class="wcd-attach" role="note">
+          <strong>Voeg je ontwerp toe aan de e-mail.</strong> Je ontwerp gaat niet
+          vanzelf mee met de e-mail. "Ontwerp e-mailen" bewaart het eerst als
+          bestand (in je map Downloads) en opent dan een e-mail aan
+          <a href="mailto:skyex.technologies@gmail.com">skyex.technologies@gmail.com</a>:
+          voeg dat bestand toe voordat je hem verstuurt, anders kunnen we je klok
+          niet maken. Opent er geen e-mail, stuur het bestand dan zelf naar dat
+          adres en zet je naam en bestelnummer in de e-mail.
+        </div>
+        <div class="wcd-buttons">
+          <button type="button" class="btn btn-primary" id="wcd-email" disabled>Ontwerp e-mailen</button>
+          <button type="button" class="btn" id="wcd-download" disabled>Alleen downloaden</button>
+        </div>
+        <div class="wcd-attach is-strong" id="wcd-attach-now" role="alert" hidden></div>
+        <details class="wcd-ha">
+          <summary>Heb je je klok al? Zet een verbeterd ontwerp erop via Home Assistant</summary>
+          <p>Dit verandert welke vakjes voor elk woord oplichten. De letters op je
+          klok blijven hetzelfde, dus gebruik het alleen om een woord te verbeteren
+          dat de verkeerde vakjes laat oplichten, een ontbrekende letter of de
+          uurregel. Je klok moet aan Home Assistant zijn toegevoegd. Zonder Home
+          Assistant klik je op <strong>Alleen downloaden</strong> en upload je het
+          bestand op de eigen webpagina van de klok; zie <a href="troubleshooting.html#changing-your-layout">Changing your layout</a>.</p>
+          <button type="button" class="btn" id="wcd-ha-copy">Kopiëren voor Home Assistant</button>
+          <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
+        </details>
+        </div>
+        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Terug</button><span></span></div>
+      </div>
+
+      <p class="wcd-flash" id="wcd-flash" role="status"></p>
+    </div>
+  </div>

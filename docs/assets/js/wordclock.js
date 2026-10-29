@@ -26,8 +26,19 @@
   // Fun phrases: shown instead of the time words on some days ("sun" ...)
   // from "HH:MM" to "HH:MM", as in the firmware (MAX_FUN_PHRASES).
   var FUN_PHRASES = 4, DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-  // A minute dot, as in the DXF generator's grid (word-clock-dxf-generator).
+  // A minute dot, as in the DXF generator's grid (dxf-generator).
   var DOT = '.';
+
+  // Texts in another language than English (assets/js/texts-nl.js, loaded by
+  // the shop plugin only), keyed by the English text. t() returns the text in
+  // WordClock.lang, with {name} filled in from `values`; English when there is
+  // no translation.
+  var texts = {};
+  function addTexts(lang, table) { texts[lang] = table; }
+  function t(text, values) {
+    var out = (texts[window.WordClock.lang] || {})[text] || text;
+    return values ? out.replace(/\{(\w+)\}/g, function (m, k) { return k in values ? values[k] : m; }) : out;
+  }
 
   function led(row, col) { return row % 2 === 0 ? row * SIZE + col : row * SIZE + (SIZE - 1 - col); }
 
@@ -137,7 +148,7 @@
   // with an optional next_hour_from minute).
   function readLayout(data) {
     if (!data || !Array.isArray(data.words) || (data.words.length !== ROWS && data.words.length !== 37)) {
-      throw new Error('This is not a word clock design file.');
+      throw new Error(t('This is not a word clock design file.'));
     }
     var d = { name: typeof data.name === 'string' ? data.name : '', letters: blankLetters(), words: blankRows(),
       letterSize: LETTER_SIZES.indexOf(data.letter_size) !== -1 ? data.letter_size : null, special: blankSpecial(),
@@ -183,7 +194,7 @@
   // Fetches site/layouts/<key>-layout.json; `base` is that folder's URL.
   function loadLayout(base, key) {
     return fetch(base + key + '-layout.json').then(function (r) {
-      if (!r.ok) throw new Error('The ' + key + ' grid could not be loaded.');
+      if (!r.ok) throw new Error(t('The {key} grid could not be loaded.', { key: key }));
       return r.json();
     });
   }
@@ -237,7 +248,7 @@
     else rowsFor(d, hour, minute).forEach(function (r) { leds = leds.concat(d.words[r]); });
     var text = wordText(d, leds.filter(function (l, i) { return leds.indexOf(l) === i; }));
     var dots = minute % 5;
-    return (text || '(no words lit)') + (dots ? '  + ' + dots + ' dot' + (dots > 1 ? 's' : '') : '');
+    return (text || t('(no words lit)')) + (dots ? '  + ' + t(dots > 1 ? '{n} dots' : '{n} dot', { n: dots }) : '');
   }
 
   // Sets the letters of a grid (.wcd-grid) to scale with the front plate:
@@ -292,6 +303,7 @@
     SYMBOLS: SYMBOLS, isAllowedChar: isAllowedChar, textStyle: textStyle, blankRows: blankRows, blankLetters: blankLetters,
     nextHourFrom: nextHourFrom, readLayout: readLayout, loadLayout: loadLayout,
     rowsFor: rowsFor, litLeds: litLeds, wordText: wordText, timeText: timeText, minuteDots: minuteDots,
-    fillCell: fillCell, sizeLetters: sizeLetters
+    fillCell: fillCell, sizeLetters: sizeLetters,
+    lang: 'en', addTexts: addTexts, t: t
   };
 })();

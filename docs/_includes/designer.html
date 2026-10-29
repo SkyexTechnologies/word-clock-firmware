@@ -1,23 +1,13 @@
----
-title: Design your own
-nav_order: 8
----
-
-# Design your own letter grid
-
-The letter grids on the [home page](index.html#how-it-reads-the-time) are
-examples. You can also design your own: in your language, with your own
-words, or with a name or message hidden among the letters. The designer
-below takes you through it in five steps. Your work is kept in this browser
-while you design.
-
-<div id="wcd" class="wcd" data-layouts="{{ '/layouts/' | relative_url }}">
+  <!-- The designer's markup, shared by design-your-own.md and the shop plugin
+       (shop/wordclock-designer/): plain HTML without Liquid. data-only="docs"
+       and data-only="shop" mark the parts of one of the two
+       (data-mode="shop" on #wcd). -->
   <ol class="wcd-steps">
     <li><button type="button" class="wcd-step" data-step="start"><span>1</span> Start</button></li>
     <li><button type="button" class="wcd-step" data-step="letters"><span>2</span> Letters</button></li>
     <li><button type="button" class="wcd-step" data-step="words"><span>3</span> Words</button></li>
     <li><button type="button" class="wcd-step" data-step="check"><span>4</span> Check</button></li>
-    <li><button type="button" class="wcd-step" data-step="send"><span>5</span> Send</button></li>
+    <li><button type="button" class="wcd-step" data-step="send"><span>5</span> <span data-only="docs">Send</span><span data-only="shop">Order</span></button></li>
   </ol>
 
   <div class="wcd-body">
@@ -159,14 +149,16 @@ while you design.
         <p class="wcd-output" id="wcd-phrase"></p>
         <div class="wcd-check" id="wcd-check"></div>
         <button type="button" class="btn" id="wcd-picture">Download picture (JPEG)</button>
-        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><button type="button" class="btn btn-primary" data-go="next">Next: send</button></div>
+        <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><button type="button" class="btn btn-primary" data-go="next"><span data-only="docs">Next: send</span><span data-only="shop">Next: order</span></button></div>
       </div>
 
       <div class="wcd-panel" data-step="send" hidden>
-        <h3 class="wcd-title">5. Send your design</h3>
+        <h3 class="wcd-title" data-only="docs">5. Send your design</h3>
+        <h3 class="wcd-title" data-only="shop">5. Order your clock</h3>
         <p>This is your front plate: 30 × 30 cm, with the letters at the size you
         chose. The black border of about 2.5 cm around the letters is part of the
         design.</p>
+        <div data-only="docs">
         <div class="wcd-attach" role="note">
           <strong>Use the details from your order.</strong> Fill in the same name
           and email address you used when ordering your clock, and its order
@@ -185,14 +177,31 @@ while you design.
         <p class="wcd-muted">Ordered more than one clock? Send a design for each clock, numbered
         1, 2, 3 and so on. If several clocks get the same design, send it once and say in your
         email how many clocks it is for.</p>
+        </div>
         <div class="wcd-check" id="wcd-send-check"></div>
-        <p class="wcd-muted">Layout revision <strong id="wcd-revision"></strong>. It goes up by
+        <p class="wcd-muted" data-only="docs">Layout revision <strong id="wcd-revision"></strong>. It goes up by
         one when you open a design you sent before and change it.</p>
         <label class="wcd-confirm">
           <input type="checkbox" id="wcd-confirm">
-          I have checked my design in step 4. I understand that it can't be changed
-          after I send it.
+          <span>I have checked my design in step 4. I understand that it can't be changed
+          after I <span data-only="docs">send it</span><span data-only="shop">order my clock</span>.</span>
         </label>
+        <div data-only="shop">
+          <label class="wcd-confirm wcd-option" id="wcd-light-sensor-option" hidden>
+            <input type="checkbox" id="wcd-light-sensor">
+            <span><strong>Light sensor</strong><span id="wcd-light-sensor-price"></span>: adjusts the
+            brightness to the light in the room. <em id="wcd-light-sensor-soon">Coming soon.</em></span>
+          </label>
+          <label class="wcd-label" for="wcd-quantity">Number of clocks with this design</label>
+          <input type="number" id="wcd-quantity" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+          <div class="wcd-buttons">
+            <button type="button" class="btn btn-primary" id="wcd-cart" disabled>Add to cart</button>
+            <button type="button" class="btn" id="wcd-download-copy" disabled>Save a copy</button>
+          </div>
+          <p class="wcd-muted">Your design is added to your order. A copy is useful
+          to order the same clock again later: open it in step 1.</p>
+        </div>
+        <div data-only="docs">
         <div class="wcd-attach" role="note">
           <strong>Attach your design to the email.</strong> Your design is not added
           to the email automatically. "Email your design" first saves it as a file
@@ -217,58 +226,10 @@ while you design.
           <button type="button" class="btn" id="wcd-ha-copy">Copy for Home Assistant</button>
           <textarea id="wcd-ha-text" class="wcd-input wcd-ha-text" rows="6" readonly hidden></textarea>
         </details>
+        </div>
         <div class="wcd-nav"><button type="button" class="btn" data-go="back">Back</button><span></span></div>
       </div>
 
       <p class="wcd-flash" id="wcd-flash" role="status"></p>
     </div>
   </div>
-</div>
-
-<script src="{{ '/assets/js/wordclock.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-<script src="{{ '/assets/js/designer.js' | relative_url }}?v={{ site.time | date: '%s' }}" defer></script>
-
-## Help
-
-### Why does a phrase say the next hour?
-
-At 4:35 English says "twenty-five to **five**": the phrase is about the
-*coming* hour. Languages switch at different moments: Dutch, Frisian and Norwegian already
-at 4:20 ("tien voor half **vijf**"), German, Swedish and Danish at 4:25,
-English and the Romance languages at 4:35, and Korean, Japanese, Chinese and
-Turkish (which the Türkçe grid reads digitally: "saat dört kırk") never. In step 3, choose your language from the list and this is set
-for you. For a different way of saying the time, tick **next hour** for each
-minute phrase that names the coming hour.
-
-### The words before the hour change with the hour
-
-In Spanish, one o'clock is "ES LA UNA" but two o'clock is "SON LAS DOS". Leave
-the **opening words** empty and put "ES LA" or "SON LAS" into each hour
-instead, as the Español grid does. Português ("É UMA", "SÃO DUAS"), Italiano
-("È L'UNA", "SONO LE DUE") and Français ("UNE HEURE", "DEUX HEURES") work the
-same way.
-
-### One hour is written differently on the full hour
-
-German says "EIN UHR" at 1:00 but "FÜNF NACH EINS" at 1:05. For cases like
-this, fill in the hour under **Hours on the full hour**. Leave those empty
-when the hour is written the same way all the time.
-
-### What do I have to fill in?
-
-Only the minutes (from x:05) and the twelve hours. Everything else is
-optional:
-
-- **Opening words** such as IT IS: some grids show only the time.
-- **Days**: leave all seven empty for a grid without a row of weekdays.
-- **Minute dots**: leave all four empty for a clock that shows only the
-  five-minute steps.
-- **x:00 on the hour** (O'CLOCK) and **hours on the full hour**.
-
-A clock without opening words, days or minute dots simply doesn't show them,
-and its settings don't offer them either.
-
-### How many letters can a phrase have?
-
-Up to 24. The longest phrases in common languages, like English "TWENTY
-FIVE PAST" (14) or Spanish "MENOS VEINTICINCO" (16), fit easily.
