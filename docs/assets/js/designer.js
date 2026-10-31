@@ -243,6 +243,7 @@
   var root, gridEl;
   // In the shop the name, email and order number come from the checkout.
   var shop = false;
+  var soldOut = false;
 
   /* ---------- clock logic (same rules as the firmware) ---------- */
   function rowsFor(hour, minute) { return WC.rowsFor(design, hour, minute); }
@@ -709,14 +710,14 @@
     var ok = !missingDetail() && $('#wcd-confirm').checked;
     $('#wcd-email').disabled = !ok;
     $('#wcd-download').disabled = !ok;
-    $('#wcd-cart').disabled = !ok;
+    $('#wcd-cart').disabled = !ok || soldOut;
     $('#wcd-download-copy').disabled = !ok;
   }
 
   // Shop: put the design and the number of clocks into the product's
   // add-to-cart form (the plugin hides it) and submit it.
   function addToCart() {
-    if (!confirmed()) return;
+    if (soldOut || !confirmed()) return;
     if (problems().length) { flash(t('First finish your design: see the list above.')); return; }
     var form = document.querySelector('form.cart');
     var field = form && form.querySelector('[name="wordclock_design"]');
@@ -725,12 +726,41 @@
     var sensor = form.querySelector('[name="wordclock_light_sensor"]');
     if (sensor) sensor.value = $('#wcd-light-sensor').checked ? 'yes' : '';
     var quantity = form.querySelector('input.qty');
-    if (quantity) quantity.value = Math.max(1, parseInt($('#wcd-quantity').value, 10) || 1);
+    if (quantity) quantity.value = Math.min(parseInt($('#wcd-quantity').max, 10), Math.max(1, parseInt($('#wcd-quantity').value, 10) || 1));
     var button = form.querySelector('.single_add_to_cart_button');
     $('#wcd-cart').disabled = true;
     if (form.requestSubmit) form.requestSubmit(button || undefined);
     else if (button) button.click();
     else form.submit();
+  }
+
+  // Shop: a sold-out batch can be designed and saved, but not ordered; a
+  // batch with few clocks left limits the number of clocks.
+  function showStock(out, left) {
+    soldOut = out;
+    $('#wcd-sold-out').hidden = !out;
+    $('#wcd-cart').style.display = out ? 'none' : '';
+    $('#wcd-quantity-field').hidden = out;
+    var quantity = $('#wcd-quantity');
+    quantity.max = left > 0 && left < 99 ? left : 99;
+    if (parseInt(quantity.value, 10) > quantity.max) quantity.value = quantity.max;
+    $('#wcd-stock-left').hidden = out || !(left > 0 && left < 99);
+    $('#wcd-stock-count').textContent = left;
+    if (out) $('#wcd-cart').disabled = true;
+  }
+
+  // The page can come from a cache, so ask the shop for the stock as it is now.
+  function refreshStock() {
+    var url = root.dataset.stockUrl;
+    if (!url || !window.fetch) return;
+    fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (p) {
+        if (!p) return;
+        var max = p.add_to_cart && p.add_to_cart.maximum;
+        showStock(!p.is_in_stock || !p.is_purchasable, max > 0 && max < 99 ? max : 0);
+      })
+      .catch(function () {});
   }
 
   function download() {
@@ -934,6 +964,10 @@
       $('#wcd-light-sensor').disabled = sensor !== 'available';
       $('#wcd-light-sensor-soon').hidden = sensor === 'available';
       $('#wcd-light-sensor-price').textContent = sensor === 'available' ? ' (+ ' + root.dataset.lightSensorPrice + ')' : '';
+    }
+    if (shop) {
+      showStock(root.dataset.soldOut === '1', parseInt(root.dataset.stock, 10) || 0);
+      refreshStock();
     }
     gridEl = $('#wcd-grid');
     for (var r = 0; r < SIZE; r++) {

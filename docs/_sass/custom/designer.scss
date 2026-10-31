@@ -579,4 +579,12 @@
   }
   // Symbols in a caption, as text rather than colour emoji on phones.
   .wcx-symbols { font-family: "Arial Unicode MS", Arial, "Word Clock Symbols", sans-serif; }
+
+  // The transition examples: examples.js sets each cell's level, from the
+  // unlit letter colour (#3a3b40, as .wcd-cell) to the lit one, every frame.
+  .wcx-clock[data-transition] .wcd-cell { transition: none; }
+  .wcx-clock.wcd .wcd-cell.is-fading {
+    color: color-mix(in srgb, var(--wcl-lit, #fff) calc(var(--wcx-level) * 100%), #3a3b40);
+    text-shadow: 0 0 8px color-mix(in srgb, var(--wcl-glow, rgba(255, 255, 255, 0.7)) calc(var(--wcx-level) * 100%), transparent);
+  }
 }

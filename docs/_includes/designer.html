@@ -2,6 +2,11 @@
        (shop/wordclock-designer/): plain HTML without Liquid. data-only="docs"
        and data-only="shop" mark the parts of one of the two
        (data-mode="shop" on #wcd). -->
+  <div class="wcd-attach" id="wcd-sold-out" role="note" data-only="shop" hidden>
+    <strong>This batch is sold out.</strong> Sign up above to get an email when
+    the next batch is available. Meanwhile you can design your clock and save a
+    copy in step 5; then open your copy in step 1 to order it.
+  </div>
   <ol class="wcd-steps">
     <li><button type="button" class="wcd-step" data-step="start"><span>1</span> Start</button></li>
     <li><button type="button" class="wcd-step" data-step="letters"><span>2</span> Letters</button></li>
@@ -192,8 +197,11 @@
             <span><strong>Light sensor</strong><span id="wcd-light-sensor-price"></span>: adjusts the
             brightness to the light in the room. <em id="wcd-light-sensor-soon">Coming soon.</em></span>
           </label>
-          <label class="wcd-label" for="wcd-quantity">Number of clocks with this design</label>
-          <input type="number" id="wcd-quantity" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+          <p class="wcd-muted" id="wcd-stock-left" hidden><strong id="wcd-stock-count"></strong> left in this batch.</p>
+          <div id="wcd-quantity-field">
+            <label class="wcd-label" for="wcd-quantity">Number of clocks with this design</label>
+            <input type="number" id="wcd-quantity" class="wcd-input wcd-clock" min="1" max="99" step="1" value="1" inputmode="numeric">
+          </div>
           <div class="wcd-buttons">
             <button type="button" class="btn btn-primary" id="wcd-cart" disabled>Add to cart</button>
             <button type="button" class="btn" id="wcd-download-copy" disabled>Save a copy</button>
