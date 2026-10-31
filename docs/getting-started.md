@@ -7,7 +7,10 @@ nav_order: 2
 
 ## 1. Connect to Wi-Fi
 
-1. Plug in the clock. Without Wi-Fi settings it starts its own Wi-Fi hotspot,
+1. Plug in the clock, with a USB-A to USB-C cable and a USB charger with a
+   USB-A port (the common, rectangular one) of at least 2 A. A charger with
+   only USB-C ports doesn't power the clock. Without Wi-Fi settings it starts
+   its own Wi-Fi hotspot,
    named `word-clock-xxxxxx`. The last six characters are unique to your
    clock; note them, you need them in step 3.
 2. Connect to that hotspot with your phone or laptop. A setup page opens

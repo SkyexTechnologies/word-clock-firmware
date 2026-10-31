@@ -12,7 +12,7 @@ nav_order: 6
 | The time in words | Everything is fine. |
 | One LED walking along all the LEDs | The clock doesn't know the time yet. Check its Wi-Fi connection, and that Home Assistant or the internet is reachable. |
 | All LEDs cycling red, green and blue | The clock is missing its factory data. Contact Skyex Technologies. |
-| Nothing | The clock is switched off under *01. Word Clock*, or the brightness is very low. Check the web page. |
+| Nothing | The clock is switched off under *01. Word Clock*, or the brightness is very low. Check the web page. If the web page doesn't open either, see [The clock stays dark](#the-clock-stays-dark). |
 
 ## The button
 
@@ -26,6 +26,18 @@ nav_order: 6
 A factory reset clears the Wi-Fi settings, all settings and the Home Assistant
 encryption key. The clock then starts its setup hotspot again; see
 [Getting started](getting-started.html).
+
+## The clock stays dark
+
+If no LED lights up after you plug the clock in and it doesn't start its
+setup hotspot, it gets no power:
+
+- Use a charger with a **USB-A port** (the common, rectangular one) and a
+  USB-A to USB-C cable. A charger with only USB-C ports, or a USB-C to USB-C
+  cable, doesn't power the clock.
+- Use a charger of at least 2 A. A computer's USB port or a weak charger may
+  not be enough.
+- Try another cable.
 
 ## The setup hotspot is gone
 
