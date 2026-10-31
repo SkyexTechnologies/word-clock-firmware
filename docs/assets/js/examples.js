@@ -10,9 +10,11 @@
  *                 word, e.g. "SKYEX"
  *   data-symbol   "row,column,symbol": puts a symbol in that square (from 0)
  *                 and lights it as a special word
- *   data-transition  "fade", "crossfade", "typewriter" or "sweep": changes
- *                 back and forth between data-time and data-next ("HH:MM")
+ *   data-transition  "fade", "crossfade", "typewriter" or "sweep": goes
+ *                 round from data-time to the times in data-next and back,
  *                 with that transition, as the clock's 02. Transition Effect
+ *   data-next     times after data-time, "HH:MM" or "HH:MM@day", comma
+ *                 separated (a time with a fun phrase shows the phrase)
  */
 (function () {
   'use strict';
@@ -63,8 +65,13 @@
     }
     WC.sizeLetters(grid, +data.size || WC.DEFAULT_LETTER_SIZE);
     if (data.transition && data.next) {
-      var next = data.next.split(':');
-      animate(cells, data.transition, lit, WC.litLeds(d, +next[0], +next[1], day));
+      var states = [lit].concat(data.next.split(',').map(function (item) {
+        var at = item.trim().split('@'), t = at[0].split(':');
+        var on = WC.litLeds(d, +t[0], +t[1], at[1] !== undefined ? +at[1] : day);
+        special.forEach(function (l) { on.add(l); });
+        return on;
+      }));
+      animate(cells, data.transition, states);
     }
   }
 
@@ -106,20 +113,21 @@
     });
   }
 
-  // Back and forth between the two times: each shown for HOLD_MS, then the
-  // transition over TRANSITION_MS. Only while the clock is on screen, and
-  // not for visitors who ask for less motion.
-  function animate(cells, effect, first, second) {
+  // Round the states (sets of lit LEDs): each shown for HOLD_MS, then the
+  // transition to the next over TRANSITION_MS. Only while the clock is on
+  // screen, and not for visitors who ask for less motion.
+  function animate(cells, effect, states) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    var from = first, to = second, start = null, visible = true, running = false;
+    var shown = 0, start = null, visible = true, running = false;
     function frame(now) {
       if (!visible) { running = false; start = null; return; }
       if (start === null) start = now;
       if (now - start >= HOLD_MS + TRANSITION_MS) {
-        var swap = from; from = to; to = swap;
+        shown = (shown + 1) % states.length;
         start = now;
       }
-      paint(cells, levels(cells, effect, from, to, Math.max(0, now - start - HOLD_MS) / TRANSITION_MS));
+      paint(cells, levels(cells, effect, states[shown], states[(shown + 1) % states.length],
+        Math.max(0, now - start - HOLD_MS) / TRANSITION_MS));
       requestAnimationFrame(frame);
     }
     function run() {
