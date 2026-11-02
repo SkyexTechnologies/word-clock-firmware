@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.11.0"
+  project_version: "1.11.1"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -24,7 +24,7 @@ esphome:
   name_add_mac_suffix: true
   # Release builds use the latest ESPHome; local builds use the pin in
   # requirements.txt. Keep this in sync with that pin.
-  min_version: 2026.9.1
+  min_version: 2026.10.1
   build_flags:
     # 48 KB IRAM with the unused part as a second heap (16 KB instead of
     # 32 KB flash cache). The ESP8266 core puts the 16 KB TLS receive buffer

@@ -21,7 +21,10 @@ CONF_UPLOAD_WINDOW = "upload_window"
 # settings 800), so the Wi-Fi credentials and the API key keep the first slots
 # and adding, removing or resizing a setting never moves them. Set here because
 # wifi: has no setup_priority option. Changing these moves the slots once.
-FIRST_SETUP_PRIORITIES = {"wifi": 900.0, "api": 850.0}
+# The captive portal must stay just before Wi-Fi (ESPHome's 251 vs 250): its
+# setup() stops its DNS server, which Wi-Fi starts with the setup hotspot,
+# and without DNS phones don't open the setup page. It restores nothing.
+FIRST_SETUP_PRIORITIES = {"captive_portal": 901.0, "wifi": 900.0, "api": 850.0}
 
 CONFIG_SCHEMA = cv.Schema(
     {
