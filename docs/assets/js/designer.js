@@ -965,6 +965,11 @@
       $('#wcd-light-sensor-soon').hidden = sensor === 'available';
       $('#wcd-light-sensor-price').textContent = sensor === 'available' ? ' (+ ' + root.dataset.lightSensorPrice + ')' : '';
     }
+    // Shop: what a clock with an own design costs more than the standard one.
+    if (shop && root.dataset.designPrice) {
+      $('#wcd-design-price').textContent = root.dataset.designPrice;
+      $('#wcd-design-price-note').hidden = false;
+    }
     if (shop) {
       showStock(root.dataset.soldOut === '1', parseInt(root.dataset.stock, 10) || 0);
       refreshStock();
@@ -1044,7 +1049,7 @@
         // Emoji and other symbols may be missing from the plate font.
         input.value = design.letters[p.row][p.col];
         input.select();
-        flash(t('Only letters, numbers and the symbols below can be used. Click a symbol to add it.'));
+        flash(t('Use a letter, a number or one of the symbols below. Click a symbol to add it.'));
         return;
       }
       if (chars.length === 1 && APOSTROPHES.indexOf(last) !== -1) {

@@ -25,7 +25,6 @@
         and word in the next steps.</p>
         <div class="wcd-cards">
           <button type="button" class="wcd-card" data-example="english" lang="en"><strong>English</strong><span>IT IS TWENTY PAST FOUR</span></button>
-          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
           <button type="button" class="wcd-card" data-example="german" lang="de"><strong>Deutsch</strong><span>ES IST ZWANZIG NACH VIER</span></button>
           <button type="button" class="wcd-card" data-example="french" lang="fr"><strong>Français</strong><span>IL EST QUATRE HEURES VINGT</span></button>
           <button type="button" class="wcd-card" data-example="spanish" lang="es"><strong>Español</strong><span>SON LAS CUATRO Y VEINTE</span></button>
@@ -36,6 +35,7 @@
           <button type="button" class="wcd-card" data-example="limburgish" lang="li"><strong>Limburgs</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
           <button type="button" class="wcd-card" data-example="drents" lang="drt"><strong>Drents</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
           <button type="button" class="wcd-card" data-example="zeeuws" lang="zea"><strong>Zeeuws</strong><span>HET IS TIEN VOOR ALF VUUF</span></button>
+          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
           <button type="button" class="wcd-card" data-example="swedish" lang="sv"><strong>Svenska</strong><span>KLOCKAN ÄR TJUGO ÖVER FYRA</span></button>
           <button type="button" class="wcd-card" data-example="norwegian" lang="nb"><strong>Norsk</strong><span>KLOKKEN ER TI PÅ HALV FEM</span></button>
           <button type="button" class="wcd-card" data-example="danish" lang="da"><strong>Dansk</strong><span>KLOKKEN ER TYVE OVER FIRE</span></button>
@@ -52,7 +52,7 @@
       </div>
 
       <div class="wcd-panel" data-step="letters" hidden>
-        <h3 class="wcd-title">2. Type the letters</h3>
+        <h3 class="wcd-title">2. Type your own words or symbols</h3>
         <p>Click a square in the grid and type its letter. The cursor moves on to
         the next square by itself; the arrow keys move it too.</p>
         <label class="wcd-label" for="wcd-letter">Letter</label>
@@ -60,7 +60,7 @@
         <p class="wcd-muted" id="wcd-letter-pos">Choose a square in the grid.</p>
         <span class="wcd-label">Symbols</span>
         <div class="wcd-chips wcd-symbols" id="wcd-symbols" role="group" aria-label="Symbols"></div>
-        <p class="wcd-muted">Other symbols and emoji can't be engraved; these can.</p>
+        <p class="wcd-muted">Besides letters and numbers, you can use these symbols.</p>
         <span class="wcd-label">Letter size on your clock</span>
         <div class="wcd-chips" role="group" aria-label="Letter size on your clock">
           <button type="button" class="wcd-chip" data-letter-size="10">Extra small (10 mm)</button>
@@ -189,7 +189,8 @@
         <label class="wcd-confirm">
           <input type="checkbox" id="wcd-confirm">
           <span>I have checked my design in step 4. I understand that it can't be changed
-          after I <span data-only="docs">send it</span><span data-only="shop">order my clock</span>.</span>
+          after I <span data-only="docs">send it</span><span data-only="shop">order my clock, and that a clock made to my design
+          has no 14 days to change my mind</span>.</span>
         </label>
         <div data-only="shop">
           <label class="wcd-confirm wcd-option" id="wcd-light-sensor-option" hidden>
@@ -197,6 +198,8 @@
             <span><strong>Light sensor</strong><span id="wcd-light-sensor-price"></span>: adjusts the
             brightness to the light in the room. <em id="wcd-light-sensor-soon">Coming soon.</em></span>
           </label>
+          <p class="wcd-muted" id="wcd-design-price-note" hidden>A clock with your own design costs
+          <strong id="wcd-design-price"></strong> more than the standard clock.</p>
           <p class="wcd-muted" id="wcd-stock-left" hidden><strong id="wcd-stock-count"></strong> left in this batch.</p>
           <div id="wcd-quantity-field">
             <label class="wcd-label" for="wcd-quantity">Number of clocks with this design</label>

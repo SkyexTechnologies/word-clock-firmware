@@ -101,7 +101,12 @@
 
   .wcd-tips {
     margin: 0.5rem 0;
+    // The bullets inside the panel, the text lined up after them (the shop's
+    // theme sets no list padding).
+    padding-left: 1.25rem;
     font-size: 0.9rem;
+
+    li { margin: 0.2rem 0; padding-left: 0.15rem; }
   }
 
   .wcd-nav {

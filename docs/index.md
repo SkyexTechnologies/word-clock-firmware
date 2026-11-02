@@ -33,7 +33,6 @@ your clock you set the colour on its web page or in Home Assistant.
 <div id="wcl" class="wcd wcl" data-layouts="{{ '/layouts/' | relative_url }}">
   <div class="wcd-chips wcl-langs" role="group" aria-label="Language of the letter grid">
     <button type="button" class="wcd-chip" data-lang="english" lang="en">English</button>
-    <button type="button" class="wcd-chip" data-lang="english-fun" lang="en">English (fun)</button>
     <button type="button" class="wcd-chip" data-lang="german" lang="de">Deutsch</button>
     <button type="button" class="wcd-chip" data-lang="french" lang="fr">Français</button>
     <button type="button" class="wcd-chip" data-lang="spanish" lang="es">Español</button>
@@ -44,6 +43,7 @@ your clock you set the colour on its web page or in Home Assistant.
     <button type="button" class="wcd-chip" data-lang="limburgish" lang="li">Limburgs</button>
     <button type="button" class="wcd-chip" data-lang="drents" lang="drt">Drents</button>
     <button type="button" class="wcd-chip" data-lang="zeeuws" lang="zea">Zeeuws</button>
+    <button type="button" class="wcd-chip" data-lang="english-fun" lang="en">English (fun)</button>
     <button type="button" class="wcd-chip" data-lang="swedish" lang="sv">Svenska</button>
     <button type="button" class="wcd-chip" data-lang="norwegian" lang="nb">Norsk</button>
     <button type="button" class="wcd-chip" data-lang="danish" lang="da">Dansk</button>

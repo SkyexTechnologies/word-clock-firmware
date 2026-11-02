@@ -24,7 +24,6 @@
         stappen kun je elke letter en elk woord aanpassen.</p>
         <div class="wcd-cards">
           <button type="button" class="wcd-card" data-example="english" lang="en"><strong>English</strong><span>IT IS TWENTY PAST FOUR</span></button>
-          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
           <button type="button" class="wcd-card" data-example="german" lang="de"><strong>Deutsch</strong><span>ES IST ZWANZIG NACH VIER</span></button>
           <button type="button" class="wcd-card" data-example="french" lang="fr"><strong>Français</strong><span>IL EST QUATRE HEURES VINGT</span></button>
           <button type="button" class="wcd-card" data-example="spanish" lang="es"><strong>Español</strong><span>SON LAS CUATRO Y VEINTE</span></button>
@@ -35,6 +34,7 @@
           <button type="button" class="wcd-card" data-example="limburgish" lang="li"><strong>Limburgs</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
           <button type="button" class="wcd-card" data-example="drents" lang="drt"><strong>Drents</strong><span>HET IS TIEN VEUR HALF VIEF</span></button>
           <button type="button" class="wcd-card" data-example="zeeuws" lang="zea"><strong>Zeeuws</strong><span>HET IS TIEN VOOR ALF VUUF</span></button>
+          <button type="button" class="wcd-card" data-example="english-fun" lang="en"><strong>English (fun)</strong><span>IT IS BEER O'CLOCK</span></button>
           <button type="button" class="wcd-card" data-example="swedish" lang="sv"><strong>Svenska</strong><span>KLOCKAN ÄR TJUGO ÖVER FYRA</span></button>
           <button type="button" class="wcd-card" data-example="norwegian" lang="nb"><strong>Norsk</strong><span>KLOKKEN ER TI PÅ HALV FEM</span></button>
           <button type="button" class="wcd-card" data-example="danish" lang="da"><strong>Dansk</strong><span>KLOKKEN ER TYVE OVER FIRE</span></button>
@@ -51,7 +51,7 @@
       </div>
 
       <div class="wcd-panel" data-step="letters" hidden>
-        <h3 class="wcd-title">2. Typ de letters</h3>
+        <h3 class="wcd-title">2. Typ je eigen woorden of symbolen</h3>
         <p>Klik op een vakje in het raster en typ de letter. De cursor gaat
         vanzelf naar het volgende vakje; met de pijltjestoetsen kan het ook.</p>
         <label class="wcd-label" for="wcd-letter">Letter</label>
@@ -59,7 +59,7 @@
         <p class="wcd-muted" id="wcd-letter-pos">Kies een vakje in het raster.</p>
         <span class="wcd-label">Symbolen</span>
         <div class="wcd-chips wcd-symbols" id="wcd-symbols" role="group" aria-label="Symbolen"></div>
-        <p class="wcd-muted">Andere symbolen en emoji kunnen niet gegraveerd worden; deze wel.</p>
+        <p class="wcd-muted">Naast letters en cijfers kun je ook deze symbolen gebruiken.</p>
         <span class="wcd-label">Lettergrootte op je klok</span>
         <div class="wcd-chips" role="group" aria-label="Lettergrootte op je klok">
           <button type="button" class="wcd-chip" data-letter-size="10">Extra klein (10 mm)</button>
@@ -189,7 +189,8 @@
         <label class="wcd-confirm">
           <input type="checkbox" id="wcd-confirm">
           <span>Ik heb mijn ontwerp in stap 4 gecontroleerd. Ik begrijp dat het niet meer
-          kan veranderen nadat ik <span data-only="docs">het verstuur</span><span data-only="shop">mijn klok bestel</span>.</span>
+          kan veranderen nadat ik <span data-only="docs">het verstuur</span><span data-only="shop">mijn klok bestel, en dat er voor een klok naar mijn
+          ontwerp geen bedenktijd van 14 dagen geldt</span>.</span>
         </label>
         <div data-only="shop">
           <label class="wcd-confirm wcd-option" id="wcd-light-sensor-option" hidden>
@@ -197,6 +198,8 @@
             <span><strong>Lichtsensor</strong><span id="wcd-light-sensor-price"></span>: past de
             helderheid automatisch aan het licht in de kamer aan. <em id="wcd-light-sensor-soon">Binnenkort beschikbaar.</em></span>
           </label>
+          <p class="wcd-muted" id="wcd-design-price-note" hidden>Een klok met je eigen ontwerp kost
+          <strong id="wcd-design-price"></strong> meer dan de standaardklok.</p>
           <p class="wcd-muted" id="wcd-stock-left" hidden>Nog <strong id="wcd-stock-count"></strong> beschikbaar in deze oplage.</p>
           <div id="wcd-quantity-field">
             <label class="wcd-label" for="wcd-quantity">Aantal klokken met dit ontwerp</label>

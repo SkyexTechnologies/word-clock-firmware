@@ -38,7 +38,7 @@ window.WordClock.addTexts('nl', {
   "Minutes": "Minuten",
   "Next hour is ticked for {list}, but not for every phrase after it. Languages usually switch to the next hour once and keep saying it until the full hour. Check in step 4 that the clock says the right hour.": "Volgend uur is aangevinkt voor {list}, maar niet voor elke zin daarna. Talen gaan meestal één keer over op het volgende uur en blijven dat zeggen tot het hele uur. Controleer in stap 4 of de klok het juiste uur zegt.",
   "Now click the letters for \"{label}\" in the grid. Click a letter again to remove it.": "Klik nu de letters voor \"{label}\" aan in het raster. Klik nog eens op een letter om hem weg te halen.",
-  "Only letters, numbers and the symbols below can be used. Click a symbol to add it.": "Alleen letters, cijfers en de symbolen hieronder kunnen. Klik op een symbool om het toe te voegen.",
+  "Use a letter, a number or one of the symbols below. Click a symbol to add it.": "Kies een letter, een cijfer of een van de symbolen hieronder. Klik op een symbool om het toe te voegen.",
   "Only {n} of the 4 minute-dot phrases have dots (fill in all 4, or none).": "Maar {n} van de 4 minuutstip-zinnen hebben stippen (vul ze alle 4 in, of geen).",
   "Only {n} of the 7 days have letters (fill in all 7, or none).": "Maar {n} van de 7 dagen hebben letters (vul ze alle 7 in, of geen).",
   "Opening words": "Openingswoorden",
