@@ -2,7 +2,7 @@ substitutions:
   name: "word-clock"
   friendly_name: "Word Clock"
   project_name: "Skyex Technologies.Word Clock"
-  project_version: "1.11.1"
+  project_version: "1.12.0"
   # Firmware update manifests (ESPHome manifest JSON with the OTA binary and
   # its MD5), published with each release of SkyexTechnologies/
   # word-clock-firmware. Every clock has this address built in: never rename
@@ -338,6 +338,18 @@ select:
         - script.execute:
             id: apply_timezone
             timezone_index: !lambda return id(timezone).active_index().value_or(0);
+  # By index in the Clock effect: only append options.
+  - platform: template
+    name: "10. Night Mode Display"
+    id: night_display
+    restore_value: True
+    optimistic: True
+    options:
+      - "Dimmed"
+      - "Off"
+    initial_option: "Dimmed"
+    icon: "mdi:lightbulb-night-outline"
+    setup_priority: -130
 
 switch:
   - platform: template
@@ -378,6 +390,37 @@ switch:
     optimistic: True
     restore_mode: RESTORE_DEFAULT_ON
     icon: "mdi:glass-mug-variant"
+  # Night mode (07-11): dimmed or off between two times, in the Clock effect.
+  # Each new restored setting gets its own setup priority, below the last
+  # one added, so its preference slot comes last (see CLAUDE.md): -100 to
+  # -140 here, the next one -150.
+  - platform: template
+    name: "07. Night Mode"
+    id: night_mode
+    optimistic: True
+    restore_mode: RESTORE_DEFAULT_OFF
+    icon: "mdi:weather-night"
+    setup_priority: -100
+
+datetime:
+  - platform: template
+    name: "08. Night Mode Start"
+    id: night_start
+    type: time
+    optimistic: True
+    restore_value: True
+    initial_value: "23:00"
+    icon: "mdi:clock-start"
+    setup_priority: -110
+  - platform: template
+    name: "09. Night Mode End"
+    id: night_end
+    type: time
+    optimistic: True
+    restore_value: True
+    initial_value: "07:00"
+    icon: "mdi:clock-end"
+    setup_priority: -120
 
 script:
   - id: apply_timezone
@@ -561,6 +604,19 @@ number:
       - script.execute: 
           id: set_light_brightness
           quick_transition: True
+  # A ceiling at night, not a factor: in a dark room automatic brightness is
+  # already lower, and the clock never goes below the floor.
+  - platform: template
+    name: "11. Night Brightness"
+    id: night_brightness
+    optimistic: True
+    min_value: ${brightness_floor}
+    max_value: 1
+    initial_value: ${brightness_floor}
+    step: 0.01
+    restore_value: True
+    icon: "mdi:brightness-3"
+    setup_priority: -140
 text_sensor:
   # Factory data from the layout sector: hardware revision and fitted
   # indications, plus "no light sensor" when none is fitted. Written with the
@@ -696,6 +752,8 @@ light:
             // Transition progress in 20 ms ticks; steps == 0: none running.
             static int step = 0;
             static int steps = 0;
+            // Night mode: the factor all colours are scaled by (1 = by day).
+            static float night_level = 1.0f;
 
             if (initial_run) {
               it.all() = Color::BLACK;
@@ -760,6 +818,36 @@ light:
                 ? id(layout).fun_now(time.day_of_week - 1, time.hour * 60 + time.minute) : -1;
             if (fun >= 0) CurrentTime[1] = 100 + fun;
 
+            /*
+             * Night mode, between 08. Night Mode Start and 09. Night Mode End
+             * (over midnight when the end is earlier; never when they are
+             * equal): "Off" scales every colour to 0, "Dimmed" to at most
+             * 11. Night Brightness of full. That is a ceiling on the light's
+             * own brightness (set by hand or by the light sensor), so a dark
+             * room stays as dim as it was and the floor is never crossed. The
+             * light itself keeps its state and brightness. Changes fade over
+             * 2 s, except just after boot.
+             */
+            const float light_brightness = id(word_clock).current_values.get_brightness();
+            float night_target = 1.0f;
+            if (id(night_mode).state) {
+              const int start = id(night_start).hour * 60 + id(night_start).minute;
+              const int end = id(night_end).hour * 60 + id(night_end).minute;
+              const bool night = start < end ? (total_minutes >= start && total_minutes < end)
+                                             : (start > end && (total_minutes >= start || total_minutes < end));
+              if (night) {
+                if (id(night_display).active_index().value_or(0) == 1) night_target = 0.0f;
+                else if (light_brightness > id(night_brightness).state)
+                  night_target = id(night_brightness).state / light_brightness;
+              }
+            }
+            if (initial_run || millis() < 15000) night_level = night_target;
+            else night_level += std::max(-0.01f, std::min(0.01f, night_target - night_level));
+            auto out = [&](int i, Color c) {
+              it[i] = night_level >= 1.0f ? c : Color(uint8_t(c.r * night_level), uint8_t(c.g * night_level),
+                                                      uint8_t(c.b * night_level));
+            };
+
             // When the five-minute phrase changes, the transition starts from
             // the letters shown until now. Minute dots and the weekday change
             // at once.
@@ -797,7 +885,7 @@ light:
             // takes the LEDs below the brightness floor, where the 8-bit
             // channels round to 0: near minimum brightness it gets shallower,
             // at the minimum the word stays lit.
-            const float brightness = id(word_clock).current_values.get_brightness();
+            const float brightness = light_brightness * night_level;
             const float lowest = brightness > 0 ? std::min(1.0f, std::max(0.6f, float(${brightness_floor}) / brightness)) : 1.0f;
             const float pulse = lowest + (1.0f - lowest) * (0.5f + 0.5f * sinf(millis() * (2.0f * float(M_PI) / 4000.0f)));
             for (uint8_t s = 0; id(indication_special_days).state && s < wordclock_layout::MAX_SPECIAL_WORDS; s++) {
@@ -812,7 +900,7 @@ light:
 
             if (steps <= 0 || step >= steps) {
               steps = 0;
-              for (int i = 0; i < it.size(); i++) it[i] = letters[i];
+              for (int i = 0; i < it.size(); i++) out(i, letters[i]);
               return;
             }
 
@@ -839,14 +927,14 @@ light:
 
             if (effect == 1) {
               // Crossfade
-              for (int i = 0; i < it.size(); i++) it[i] = blend(previous[i], letters[i], p);
+              for (int i = 0; i < it.size(); i++) out(i, blend(previous[i], letters[i], p));
             } else if (effect == 3) {
               // Sweep: the edge runs from before column 0 to past column 10,
               // two columns wide.
               const float edge = p * 13.0f - 1.0f;
               for (int i = 0; i < it.size(); i++) {
                 float t = (edge - column(i) + 1.0f) / 2.0f;
-                it[i] = blend(previous[i], letters[i], t < 0 ? 0 : (t > 1 ? 1 : t));
+                out(i, blend(previous[i], letters[i], t < 0 ? 0 : (t > 1 ? 1 : t)));
               }
             } else if (effect == 2) {
               // Typewriter: first half keeps the first `count` old letters in
@@ -860,13 +948,13 @@ light:
               for (int r = 0; r < 11; r++) {
                 for (int c = 0; c < 11; c++) {
                   int i = r * 11 + (r % 2 == 0 ? c : 10 - c);
-                  if (i < it.size() && lit(source[i]) && rank++ < count) it[i] = source[i];
+                  if (i < it.size() && lit(source[i]) && rank++ < count) out(i, source[i]);
                 }
               }
             } else {
               // Fade
               for (int i = 0; i < it.size(); i++) {
-                it[i] = p < 0.5f ? blend(previous[i], Color::BLACK, 2.0f * p)
-                                 : blend(Color::BLACK, letters[i], 2.0f * p - 1.0f);
+                out(i, p < 0.5f ? blend(previous[i], Color::BLACK, 2.0f * p)
+                                : blend(Color::BLACK, letters[i], 2.0f * p - 1.0f));
               }
             }

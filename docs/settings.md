@@ -16,6 +16,10 @@ are saved on the clock and kept after a power cut.
 | **03. Time Zone** | *Home Assistant (otherwise Amsterdam)* follows the time zone of Home Assistant, and uses Amsterdam time without Home Assistant. Choose another region if you live elsewhere. Daylight saving time is applied automatically. |
 | **04. Automatic Brightness** | On: the brightness follows the light in the room. Off: the clock uses the brightness set under *01. Word Clock*. |
 | **05. Minimum Brightness** / **06. Maximum Brightness** | The range used by automatic brightness, from 0.2 (20%) to 1 (100%). |
+| **07. Night Mode** | On: the clock dims or switches off at night. See [Night mode](#night-mode). |
+| **08. Night Mode Start** / **09. Night Mode End** | When the night starts and ends, for example 23:00 and 07:00. |
+| **10. Night Mode Display** | *Dimmed*: the clock shows the time, but dimmer. *Off*: all lights are off. |
+| **11. Night Brightness** | With *Dimmed*: how bright the clock is at most at night, from 0.2 (20%) to 1 (100%). |
 | **Indication: It is** | Show or hide the opening words, such as "IT IS". |
 | **Indication: Minutes** | Show or hide the four minute dots. |
 | **Indication: Week Days** | Show or hide the letter for the day of the week. |
@@ -61,13 +65,39 @@ it jump.
 {: .note }
 > - The clock never goes below 20% brightness. Dimmer than that, the LEDs
 >   can't show colours accurately anymore: orange, for example, would turn red.
-> - Too bright at night? Lower **05. Minimum Brightness**. Too dim during the
->   day? Raise **06. Maximum Brightness**.
+> - Too bright at night? Lower **05. Minimum Brightness**, or use
+>   [night mode](#night-mode). Too dim during the day? Raise
+>   **06. Maximum Brightness**.
 > - The maximum can't be lower than the minimum: if you set one past the
 >   other, the other follows.
 > - With automatic brightness on, the clock ignores the brightness of
 >   **01. Word Clock**. Switch **04. Automatic Brightness** off to set a fixed
 >   brightness there instead.
+
+## Night mode
+
+For a clock in a bedroom: between two times you choose, the clock dims or
+switches off by itself, every day.
+
+1. Set **08. Night Mode Start** and **09. Night Mode End**, for example 23:00
+   and 07:00. The night may run past midnight.
+2. Choose **10. Night Mode Display**: *Dimmed* or *Off*.
+3. With *Dimmed*, set **11. Night Brightness**. 0.2 (20%) is the dimmest.
+4. Switch on **07. Night Mode**.
+
+At the start and end of the night the clock fades in two seconds. During the
+night it stays switched on: on the web page and in Home Assistant you still
+see it on, and you can change its colour as usual. Switch off
+**07. Night Mode** to bring the clock back to its normal brightness.
+
+{: .note }
+> - *Dimmed* is a maximum: a clock that is already dimmer stays as it is. With
+>   automatic brightness, the clock is usually already at its minimum in a dark
+>   bedroom; night mode then only makes a difference when a light is on.
+>   Choose *Off* if you want it dark.
+> - Until the clock knows the time, for example after a power cut without
+>   internet, night mode does nothing.
+> - Start and end at the same time switches night mode off.
 
 ## Time zones
 
